@@ -1,6 +1,6 @@
 """Module containing the attributes for rewordapp."""
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 version = __version__
 __edition__ = 'Community'
 edition = __edition__
