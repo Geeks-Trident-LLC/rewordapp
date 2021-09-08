@@ -282,16 +282,20 @@ class Application:
     def callback_help_about(self):
         """Callback for Menu Help > About"""
 
-        def mouse_over(event):  # noqa
-            url_lbl.config(font=url_lbl.default_font + ('underline',))
-            url_lbl.config(cursor='hand2')
+        def mouse_over(event):
+            event.widget.config(
+                font=event.widget.default_font + ('underline',),
+                cursor='hand2'
+            )
 
-        def mouse_out(event):  # noqa
-            url_lbl.config(font=url_lbl.default_font)
-            url_lbl.config(cursor='arrow')
+        def mouse_out(event):
+            event.widget.config(
+                font=event.widget.default_font,
+                cursor='arrow'
+            )
 
-        def mouse_press(event):  # noqa
-            self.browser.open_new_tab(url_lbl.link)
+        def mouse_press(event):
+            self.browser.open_new_tab(event.widget.link)
 
         about = tk.Toplevel(self.root)
         self.set_title(widget=about, title='About')
@@ -310,8 +314,12 @@ class Application:
         frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=4)
 
+        font_size = 12 if self.is_macos else 10
         fmt = 'RewordApp v{} ({} Edition)'
-        company_lbl = self.Label(frame, text=fmt.format(version, edition))
+        company_lbl = self.Label(
+            frame, text=fmt.format(version, edition),
+            font=('san-serif', font_size, 'bold')
+        )
         company_lbl.grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         # URL
@@ -320,52 +328,25 @@ class Application:
 
         url = Data.repo_url
         self.Label(cell_frame, text='URL:').pack(side=tk.LEFT)
-        font_size = 12 if self.is_macos else 10
         style = ttk.Style()
         style.configure("Blue.TLabel", foreground="blue")
-        url_lbl = self.Label(
+        label = self.Label(
             cell_frame, text=url, font=('sans-serif', font_size),
             style='Blue.TLabel'
         )
-        url_lbl.default_font = ('sans-serif', font_size)
-        url_lbl.pack(side=tk.LEFT)
-        url_lbl.link = url
+        label.default_font = ('sans-serif', font_size)
+        label.pack(side=tk.LEFT)
+        label.link = url
 
-        url_lbl.bind('<Enter>', mouse_over)
-        url_lbl.bind('<Leave>', mouse_out)
-        url_lbl.bind('<Button-1>', mouse_press)
+        label.bind('<Enter>', mouse_over)
+        label.bind('<Leave>', mouse_out)
+        label.bind('<Button-1>', mouse_press)
 
         # dependencies
         self.Label(
-            frame, text='Dependencies:'
+            frame, text='Pypi.com Dependencies:',
+            font=('sans-serif', font_size, 'underline')
         ).grid(row=2, column=0, sticky=tk.W)
-
-        # # regexapp package
-        # import regexapp as rapp
-        # text = 'Regexapp v{} ({} Edition)'.format(rapp.version, rapp.edition)
-        # self.Label(
-        #     frame, text=text
-        # ).grid(row=3, column=0, padx=(20, 0), sticky=tk.W)
-        #
-        # # dlquery package
-        # import dlquery as dlapp
-        # text = 'DLQuery v{} ({} Edition)'.format(dlapp.version, dlapp.edition)
-        # self.Label(
-        #     frame, text=text
-        # ).grid(row=4, column=0, padx=(20, 0), pady=(0, 10), sticky=tk.W)
-        #
-        # # textfsm package
-        # import textfsm
-        # text = 'TextFSM v{}'.format(textfsm.__version__)
-        # self.Label(
-        #     frame, text=text
-        # ).grid(row=3, column=1, padx=(20, 0), sticky=tk.W)
-        #
-        # # PyYAML package
-        # text = 'PyYAML v{}'.format(yaml.__version__)
-        # self.Label(
-        #     frame, text=text
-        # ).grid(row=4, column=1, padx=(20, 0), pady=(0, 10), sticky=tk.W)
 
         # license textbox
         lframe = self.LabelFrame(
