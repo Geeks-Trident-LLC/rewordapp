@@ -5,15 +5,15 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-from os import path
+from tkinter.font import Font
+
 # from pprint import pformat
 import webbrowser
-from textwrap import dedent
 import platform
 
 from rewordapp import version
 from rewordapp import edition
-
+from rewordapp.config import Data
 
 __version__ = version
 __edition__ = edition
@@ -104,51 +104,6 @@ def set_modal_dialog(dialog):
     dialog.wait_visibility()
     dialog.grab_set()
     dialog.wait_window()
-
-
-class Data:
-    license_name = 'BSD 3-Clause License'
-    repo_url = 'https://github.com/Geeks-Trident-LLC/rewordapp'
-    license_url = path.join(repo_url, 'blob/main/LICENSE')
-    # TODO: Need to update wiki page for documentation_url instead of README.md.
-    documentation_url = path.join(repo_url, 'blob/develop/README.md')
-    copyright_text = 'Copyright @ 2021-2040 Geeks Trident LLC.  All rights reserved.'
-
-    @classmethod
-    def get_license(cls):
-        license_ = """
-            BSD 3-Clause License
-
-            Copyright (c) 2021-2040, Geeks Trident LLC
-            All rights reserved.
-
-            Redistribution and use in source and binary forms, with or without
-            modification, are permitted provided that the following conditions are met:
-
-            1. Redistributions of source code must retain the above copyright notice, this
-               list of conditions and the following disclaimer.
-
-            2. Redistributions in binary form must reproduce the above copyright notice,
-               this list of conditions and the following disclaimer in the documentation
-               and/or other materials provided with the distribution.
-
-            3. Neither the name of the copyright holder nor the names of its
-               contributors may be used to endorse or promote products derived from
-               this software without specific prior written permission.
-
-            THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-            AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-            IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-            DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-            FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-            DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-            SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-            CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-            OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-            OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-        """
-        license_ = dedent(license_).strip()
-        return license_
 
 
 class Snapshot(dict):
@@ -243,6 +198,61 @@ class Application:
         help_.add_separator()
         help_.add_command(label='About', command=lambda: self.callback_help_about())
 
+    def create_custom_label(self, parent, text='', link='',
+                            increased_size=0, bold=False, underline=False,
+                            italic=False):
+        """create custom label
+
+        Parameters
+        ----------
+        parent (tkinter): a parent of widget.
+        text (str): a text of widget.
+        link (str): a label hyperlink.
+        increased_size (int): a increased size for font.
+        bold (bool): True will set bold font.
+        underline (bool): True will set to underline font.
+        italic (bool): True will set to italic font.
+
+        Returns
+        -------
+        tkinter.Label: a label widget.
+        """
+
+        def mouse_over(event):
+            if 'underline' not in event.widget.font:
+                event.widget.configure(
+                    font=event.widget.font + ['underline'],
+                    cursor='hand2'
+                )
+
+        def mouse_out(event):
+            event.widget.config(
+                font=event.widget.font,
+                cursor='arrow'
+            )
+
+        def mouse_press(event):
+            self.browser.open_new_tab(event.widget.link)
+
+        style = ttk.Style()
+        style.configure("Blue.TLabel", foreground="blue")
+        if link:
+            label = self.Label(parent, text=text, style='Blue.TLabel')
+            label.bind('<Enter>', mouse_over)
+            label.bind('<Leave>', mouse_out)
+            label.bind('<Button-1>', mouse_press)
+        else:
+            label = self.Label(parent, text=text)
+        font = Font(name='TkDefaultFont', exists=True, root=label)
+        font = [font.cget('family'), font.cget('size') + increased_size]
+        bold and font.append('bold')
+        underline and font.append('underline')
+        italic and font.append('italic')
+        label.configure(font=font)
+        label.font = font
+        label.link = link
+        return label
+
     def callback_open_file(self):
         """Callback for Menu File > Open."""
         filetypes = [
@@ -282,21 +292,6 @@ class Application:
     def callback_help_about(self):
         """Callback for Menu Help > About"""
 
-        def mouse_over(event):
-            event.widget.config(
-                font=event.widget.default_font + ('underline',),
-                cursor='hand2'
-            )
-
-        def mouse_out(event):
-            event.widget.config(
-                font=event.widget.default_font,
-                cursor='arrow'
-            )
-
-        def mouse_press(event):
-            self.browser.open_new_tab(event.widget.link)
-
         about = tk.Toplevel(self.root)
         self.set_title(widget=about, title='About')
         width, height = 460, 460
@@ -314,13 +309,10 @@ class Application:
         frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=4)
 
-        font_size = 12 if self.is_macos else 10
-        fmt = 'RewordApp v{} ({} Edition)'
-        company_lbl = self.Label(
-            frame, text=fmt.format(version, edition),
-            font=('san-serif', font_size, 'bold')
-        )
-        company_lbl.grid(row=0, column=0, columnspan=2, sticky=tk.W)
+        self.create_custom_label(
+            frame, text=Data.main_app_text,
+            increased_size=2, bold=True
+        ).grid(row=0, column=0, columnspan=2, sticky=tk.W)
 
         # URL
         cell_frame = self.Frame(frame, width=450, height=5)
@@ -328,24 +320,14 @@ class Application:
 
         url = Data.repo_url
         self.Label(cell_frame, text='URL:').pack(side=tk.LEFT)
-        style = ttk.Style()
-        style.configure("Blue.TLabel", foreground="blue")
-        label = self.Label(
-            cell_frame, text=url, font=('sans-serif', font_size),
-            style='Blue.TLabel'
-        )
-        label.default_font = ('sans-serif', font_size)
-        label.pack(side=tk.LEFT)
-        label.link = url
 
-        label.bind('<Enter>', mouse_over)
-        label.bind('<Leave>', mouse_out)
-        label.bind('<Button-1>', mouse_press)
+        self.create_custom_label(
+            cell_frame, text=url, link=url
+        ).pack(side=tk.LEFT)
 
         # dependencies
-        self.Label(
-            frame, text='Pypi.com Dependencies:',
-            font=('sans-serif', font_size, 'underline')
+        self.create_custom_label(
+            frame, text='Pypi.com Dependencies:', bold=True
         ).grid(row=2, column=0, sticky=tk.W)
 
         # license textbox
@@ -362,15 +344,20 @@ class Application:
         scrollbar = ttk.Scrollbar(lframe, orient=tk.VERTICAL, command=txtbox.yview)
         scrollbar.grid(row=0, column=1, sticky='nsew')
         txtbox.config(yscrollcommand=scrollbar.set)
-        txtbox.insert(tk.INSERT, Data.get_license())
+        txtbox.insert(tk.INSERT, Data.license)
         txtbox.config(state=tk.DISABLED)
 
         # footer - copyright
         frame = self.Frame(paned_window, width=450, height=20)
         paned_window.add(frame, weight=1)
 
-        footer = self.Label(frame, text=Data.copyright_text)
-        footer.pack(side=tk.LEFT, pady=(10, 10))
+        self.Label(frame, text=Data.copyright_text).pack(side=tk.LEFT, pady=(10, 10))
+
+        self.create_custom_label(
+            frame, text=Data.company, link=Data.company_url
+        ).pack(side=tk.LEFT, pady=(10, 10))
+
+        self.Label(frame, text='.  All right reserved.').pack(side=tk.LEFT, pady=(10, 10))
 
         set_modal_dialog(about)
 
