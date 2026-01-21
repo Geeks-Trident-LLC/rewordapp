@@ -1,0 +1,155 @@
+"""
+rewordapp.ui.about
+------------------
+
+This module defines the UI components for the "About" dialog in RewordApp CE.
+"""
+
+from typing import Any, Union
+
+import tkinter as tk
+from tkinter import ttk
+
+import rewordapp.ui as ui
+
+from rewordapp.ui import helper
+from rewordapp.ui import is_macos, is_linux
+
+from rewordapp.config import Data
+
+app_data = Data()
+
+
+def create_about_window(
+    parent: Union[ui.Tk, ui.Toplevel],
+    width: int = 460,
+    height: int = 460
+) -> ui.Toplevel:
+    """Create and center the About dialog window within the given parent."""
+    about = ui.Toplevel(parent)
+    parent.title("About - RewordApp CE")
+    helper.center_window(parent, about, width, height)
+    return about
+
+
+def create_main_frame(
+    parent: Union[ui.Tk, ui.Toplevel, ui.Frame]
+) -> ui.Frame:
+    """Create and pack a main frame that fills and expands within the given container."""
+    frame = ui.Frame(parent)
+    frame.pack(fill="both", expand=True)
+    return frame
+
+
+def create_panel_window(parent: Any) -> ttk.PanedWindow:
+    """Create and pack a vertical PanedWindow inside the given parent widget."""
+    paned_window = ui.PanedWindow(parent, orient="vertical")
+    paned_window.pack(fill="both", expand=True, padx=8, pady=12)
+    return paned_window
+
+
+def add_main_panel(parent: ui.PanedWindow, width: int = 450, height: int = 20) -> ui.Frame:
+    """Add the main application panel with a styled header label to a PanedWindow."""
+    frame = ui.Frame(parent, width=width, height=height)
+    parent.add(frame, weight=4)
+
+    helper.create_styled_label(
+        frame, text=app_data.main_app_text,
+        increased_size=2, bold=True,
+        applied_layout=("grid", dict(row=0, column=0, columnspan=2, sticky=tk.W))
+    )
+
+    return frame
+
+
+def add_repository_link(
+    parent: ui.Frame,
+    width: int = 450,
+    height: int = 5
+) -> None:
+    """Add a repository link section with labels to the given container."""
+    cell_frame = ui.Frame(parent, width=width, height=height)
+    cell_frame.grid(row=1, column=0, sticky=tk.W, columnspan=2)
+
+    helper.create_styled_label(
+        cell_frame, text="Repository:", bold=True,
+        applied_layout=("pack", dict(side=tk.LEFT))
+    )
+    helper.create_styled_label(
+        cell_frame, text=app_data.repo_url, link=app_data.repo_url,
+        applied_layout=("pack", dict(side=tk.LEFT))
+    )
+
+
+def add_dependency_panel(parent: Any) -> None:
+    """Add a panel displaying PyPI dependencies with clickable package links."""
+    helper.create_styled_label(
+        parent, text="PyPI Dependencies:", bold=True,
+        applied_layout=("grid", dict(row=2, column=0, sticky=tk.W))
+    )
+
+    row, column = 3, 0
+    for pkg_name, pkg in app_data.get_dependency().items():
+        helper.create_styled_label(
+            parent,
+            text=pkg.get("package", pkg_name),
+            link=pkg.get("url", ""),
+            applied_layout=("grid", dict(row=row, column=column % 2, padx=(20, 0), sticky=tk.W))
+        )
+
+        if column > 0 and column % 2 == 0:
+            row += 1
+        column += 1
+
+
+def add_license_panel(
+    parent: Union[tk.Tk, ui.Toplevel, ui.PanedWindow],
+    width: int = 450,
+    height: int = 200
+) -> None:
+    """Create a scrollable license panel and add it to the given container."""
+
+    label_frame = ui.LabelFrame(
+        parent, height=height, width=width, text=app_data.license_name
+    )
+    parent.add(label_frame, weight=7)
+
+    # Adjust text area size based on platform
+    text_width = 58 if is_macos else 51
+    text_height = 18 if is_macos else 14 if is_linux else 15
+
+    text_area = ui.TextArea(label_frame, width=text_width, height=text_height, wrap="word")
+    text_area.grid(row=0, column=0, padx=5, pady=5)
+
+    scrollbar = ui.Scrollbar(label_frame, orient="vertical", command=text_area.yview)
+    scrollbar.grid(row=0, column=1, sticky="nsew")
+
+    text_area.config(yscrollcommand=scrollbar.set)
+    text_area.insert(tk.INSERT, app_data.license)
+
+    text_area.config(state="disabled")
+
+
+def create_footer(
+    parent: Union[ui.Tk, ui.Toplevel, ui.PanedWindow],
+    width: int = 450,
+    height: int = 20
+) -> None:
+    """Create and add a footer with copyright and company info to the given container."""
+    frame = ui.Frame(parent, width=width, height=height)
+    parent.add(frame, weight=1)
+
+    helper.create_styled_label(
+        frame, text=app_data.copyright_text,
+        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+    )
+
+    helper.create_styled_label(
+        frame, text=app_data.company, link=app_data.company_url,
+        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+    )
+
+    helper.create_styled_label(
+        frame, text=".  All rights reserved.",
+        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+    )

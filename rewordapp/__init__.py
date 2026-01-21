@@ -1,15 +1,18 @@
-"""Top-level module for rewordapp.
+"""
+rewordapp: Top-level package initializer.
 
-- allow end-user to transform data.
+This module exposes the primary classes, builders, and utilities
+that form the core functionality of rewordapp. It provides access
+to pattern definitions, dynamic test script generation, and
+reference management utilities. End-users can leverage these
+exports to build, customize, and validate regex patterns across
+different contexts.
 """
 
 from rewordapp.config import version
-from rewordapp.config import edition
 
 __version__ = version
-__edition__ = edition
 
 __all__ = [
     'version',
-    'edition',
 ]

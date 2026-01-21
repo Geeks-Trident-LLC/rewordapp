@@ -1,0 +1,273 @@
+"""
+rewordapp.ui.helper
+===================
+
+Utility functions for constructing and managing Tkinter UI components
+in the Rewordapp GUI application. These helpers are designed to simplify
+layout code and avoid runtime errors when working with varying widget types.
+
+"""
+
+
+from typing import Any, Optional, Tuple, Dict
+from typing import Union
+
+import webbrowser
+
+from tkinter import ttk
+from tkinter.font import Font
+import tkinter as tk
+from tkinter import messagebox
+
+from rewordapp.config import Data
+
+app_data = Data()
+
+
+def get_center_coordinates(
+        parent: tk.Tk, child_width: int, child_height: int
+) -> Tuple[int, int]:
+    """Calculate coordinates to center a child window within its parent.
+
+    Parameters
+    ----------
+    parent : tkinter.Tk or tkinter.Toplevel
+        Parent window whose geometry is used as reference.
+    child_width : int
+        Width of the child window.
+    child_height : int
+        Height of the child window.
+
+    Returns
+    -------
+    tuple of int
+        (x, y) coordinates for placing the child window centered
+        relative to the parent window.
+    """
+    geometry = parent.winfo_geometry()  # format: "WxH+X+Y"
+    size, x_str, y_str = geometry.split("+")
+    parent_x, parent_y = int(x_str), int(y_str)
+    parent_w, parent_h = map(int, size.split("x"))
+
+    x = parent_x + (parent_w - child_width) // 2
+    y = parent_y + (parent_h - child_height) // 2
+    return x, y
+
+
+def center_window(
+    parent: Union[tk.Tk, tk.Toplevel],
+    window: Union[tk.Tk, tk.Toplevel],
+    width: int,
+    height: int,
+    x_resizable: bool = False,
+    y_resizable: bool = False
+) -> None:
+    """Center a Tkinter window relative to its parent.
+
+    Parameters
+    ----------
+    parent : tkinter.Tk or tkinter.Toplevel
+        The parent window used as reference for positioning.
+    window : tkinter.Tk or tkinter.Toplevel
+        The child window to be centered.
+    width : int
+        Desired width of the child window.
+    height : int
+        Desired height of the child window.
+    x_resizable : bool, optional
+        Whether the window can be resized horizontally. Default is False.
+    y_resizable : bool, optional
+        Whether the window can be resized vertically. Default is False.
+
+    Returns
+    -------
+    None
+        Configures geometry and resizability of the child window.
+    """
+    x, y = get_center_coordinates(parent, width, height)
+    window.geometry(f"{width}x{height}+{x}+{y}")
+    window.resizable(x_resizable, y_resizable)
+
+
+def make_modal(dialog: Union[tk.Toplevel, tk.Tk]) -> None:
+    """Configure a Tkinter window to behave as a modal dialog.
+
+    Parameters
+    ----------
+    dialog : tkinter.Toplevel or tkinter.Tk
+        The dialog or window instance to make modal.
+
+    Returns
+    -------
+    None
+        Blocks interaction with other windows until the dialog is closed.
+    """
+    parent = dialog.master if dialog.master else None
+    if dialog.master:
+        dialog.transient(parent)
+
+    dialog.wait_visibility()
+    dialog.grab_set()
+    dialog.wait_window()
+
+
+def show_message_dialog(
+    title: Optional[str] = None,
+    error: Optional[str] = None,
+    warning: Optional[str] = None,
+    info: Optional[str] = None,
+    question: Optional[str] = None,
+    okcancel: Optional[str] = None,
+    retrycancel: Optional[str] = None,
+    yesno: Optional[str] = None,
+    yesnocancel: Optional[str] = None,
+    **options
+) -> Any:
+    """Display a tkinter message dialog based on the provided message type.
+
+    Parameters
+    ----------
+    title : str, optional
+        Title of the dialog window.
+    error : str, optional
+        Error message to display.
+    warning : str, optional
+        Warning message to display.
+    info : str, optional
+        Information message to display.
+    question : str, optional
+        Question prompt to display.
+    okcancel : str, optional
+        OK/Cancel prompt message.
+    retrycancel : str, optional
+        Retry/Cancel prompt message.
+    yesno : str, optional
+        Yes/No prompt message.
+    yesnocancel : str, optional
+        Yes/No/Cancel prompt message.
+    options : dict, optional
+        Additional keyword arguments passed to the messagebox.
+
+    Returns
+    -------
+    Any
+        Result of the dialog interaction (string, boolean, or None).
+    """
+    mapping = {
+        error: messagebox.showerror,
+        warning: messagebox.showwarning,
+        info: messagebox.showinfo,
+        question: messagebox.askquestion,
+        okcancel: messagebox.askokcancel,
+        retrycancel: messagebox.askretrycancel,
+        yesno: messagebox.askyesno,
+        yesnocancel: messagebox.askyesnocancel,
+    }
+
+    for message, func in mapping.items():
+        if message:
+            return func(title=title, message=message, **options)
+
+    # Default fallback: show info dialog
+    return messagebox.showinfo(title=title, message=info or "", **options)
+
+
+def create_styled_label(
+    parent: tk.Widget,
+    text: str = "",
+    link: str = "",
+    increased_size: int = 0,
+    bold: bool = False,
+    underline: bool = False,
+    italic: bool = False,
+    applied_layout: Optional[Tuple[str, Dict[str, Any]]] = None
+) -> ttk.Label:
+    """Create a styled Tkinter label with optional hyperlink behavior.
+
+    Parameters
+    ----------
+    parent : tkinter.Widget
+        The parent container for the label.
+    text : str, optional
+        Text to display in the label. Default is an empty string.
+    link : str, optional
+        URL to open when the label is clicked. Default is empty (no link).
+    increased_size : int, optional
+        Amount to increase the base font size. Default is 0.
+    bold : bool, optional
+        If True, renders text in bold. Default is False.
+    underline : bool, optional
+        If True, underlines the text. Default is False.
+    italic : bool, optional
+        If True, italicizes the text. Default is False.
+    applied_layout : tuple, optional
+        Layout method and kwargs, e.g. ("grid", {"row":0, "column":0}).
+
+    Returns
+    -------
+    ttk.Label
+        A styled label widget, optionally bound to open a hyperlink.
+    """
+
+    def mouse_over(event):
+        if "underline" not in event.widget.font:
+            event.widget.configure(
+                font=event.widget.font + ["underline"],
+                cursor="hand2"
+            )
+
+    def mouse_out(event):
+        event.widget.config(font=event.widget.font, cursor="arrow")
+
+    def mouse_press(event):
+        webbrowser.open_new_tab(event.widget.link)
+
+    style = ttk.Style()
+    style.configure("Blue.TLabel", foreground="blue")
+
+    if link:
+        label = ttk.Label(parent, text=text, style="Blue.TLabel")
+        label.bind("<Enter>", mouse_over)
+        label.bind("<Leave>", mouse_out)
+        label.bind("<Button-1>", mouse_press)
+    else:
+        label = ttk.Label(parent, text=text)
+
+    font = Font(name="TkDefaultFont", exists=True, root=label)
+    font_spec = [font.cget("family"), font.cget("size") + increased_size]
+    if bold:
+        font_spec.append("bold")
+    if underline:
+        font_spec.append("underline")
+    if italic:
+        font_spec.append("italic")
+
+    label.configure(font=font_spec)
+    label.font = font_spec
+    label.link = link
+
+    if isinstance(applied_layout, (list, tuple)) and len(applied_layout) == 2:
+        case, kwargs = applied_layout
+        layout_methods = {"grid": label.grid, "pack": label.pack, "place": label.place}
+        func = layout_methods.get(case)
+        if func:
+            func(**kwargs)
+
+    return label
+
+
+def open_app_resource(resource: str) -> None:
+    """Open a specified application resource in a web browser.
+
+    Parameters
+    ----------
+    resource : str
+        The resource key to open. Supported values: "license", "documentation".
+    """
+    resources = {
+        "license": app_data.license_url,
+        "documentation": app_data.documentation_url,
+    }
+    url = resources.get(resource)
+    if url:
+        webbrowser.open_new_tab(url)

@@ -1,25 +1,37 @@
-"""Module containing the attributes for rewordapp."""
+"""
+rewordapp.config
+----------------
+
+This module centralizes configuration settings and constants for RewordApp CE.
+"""
 
 from os import path
-from textwrap import dedent
 
-__version__ = '0.0.4'
+from rewordapp.deps import genericlib_file_module as file
+from rewordapp.deps import genericlib_version
+from rewordapp.deps import regexapp_version
+
+__version__ = '0.1.0a1'
 version = __version__
-__edition__ = 'Community'
-edition = __edition__
 
 __all__ = [
     'version',
-    'edition',
     'Data'
 ]
 
 
 class Data:
+    """Centralized application metadata, package info, and license details for RewordApp CE."""
+
     # main app
-    main_app_text = 'RewordApp {} ({} Edition)'.format(version, edition)
+    main_app_text = f'RewordApp v{version} CE'
 
     # packages
+    genericlib_text = f"genericlib v{genericlib_version}"
+    genericlib_link = "https://pypi.org/project/genericlib/"
+
+    regexapp_text = 'regexapp v{}'.format(regexapp_version)
+    regexapp_link = 'https://pypi.org/project/regexapp'
 
     # company
     company = 'Geeks Trident LLC'
@@ -27,44 +39,26 @@ class Data:
 
     # URL
     repo_url = 'https://github.com/Geeks-Trident-LLC/rewordapp'
-    # TODO: Need to update wiki page for documentation_url instead of README.md.
     documentation_url = path.join(repo_url, 'blob/develop/README.md')
     license_url = path.join(repo_url, 'blob/develop/LICENSE')
 
     # License
     years = '2021-2040'
-    license_name = 'BSD 3-Clause License'
+    license_name = 'RewordApp License'
     copyright_text = 'Copyright @ {}'.format(years)
-    license = dedent(
-        """
-        BSD 3-Clause License
+    license = file.read('LICENSE')
 
-        Copyright (c) {}, {}
-        All rights reserved.
-
-        Redistribution and use in source and binary forms, with or without
-        modification, are permitted provided that the following conditions are met:
-
-        1. Redistributions of source code must retain the above copyright notice, this
-           list of conditions and the following disclaimer.
-
-        2. Redistributions in binary form must reproduce the above copyright notice,
-           this list of conditions and the following disclaimer in the documentation
-           and/or other materials provided with the distribution.
-
-        3. Neither the name of the copyright holder nor the names of its
-           contributors may be used to endorse or promote products derived from
-           this software without specific prior written permission.
-
-        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-        DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-        SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-        CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-        OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-        OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-        """.format(years, company)
-    ).strip()
+    @classmethod
+    def get_dependency(cls):
+        """Return a dictionary of package dependencies with names and PyPI links."""
+        dependencies = dict(
+            genericlib=dict(
+                package=cls.genericlib_text,
+                url=cls.genericlib_link
+            ),
+            regexapp=dict(
+                package=cls.regexapp_text,
+                url=cls.regexapp_link
+            )
+        )
+        return dependencies
