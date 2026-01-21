@@ -20,6 +20,7 @@ import rewordapp.ui as ui
 import rewordapp.ui.menu as ui_menu
 import rewordapp.ui.about as ui_about
 import rewordapp.ui.helper as ui_helper
+import rewordapp.ui.user as ui_user
 
 
 class Application:
@@ -35,9 +36,14 @@ class Application:
 
         # Tkinter widgets for main layout
         self.main_paned_window = None   # container holding input, controls, and output frames
-        self.input_frame = None         # frame containing the user input textarea
+
+        self.user_frame = None         # frame containing the user input textarea
+        self.user_textarea = None
+
         self.controls_frame = None      # frame containing action buttons to process text
+
         self.output_frame = None        # frame containing the output textarea
+        self.output_textarea = None
 
         # methods call
         self._init_menu_bar()
@@ -51,29 +57,28 @@ class Application:
 
     def _init_main_frames(self) -> None:
         """Initialize and arrange the main frames in the application window."""
-        self.main_paned_window = ui.create_widget(
+        paned_window = ui.create_widget(
             "panedwindow", parent=self.root, orient=tk.VERTICAL,
             layout=("pack", dict(fill=tk.BOTH, expand=True, padx=2, pady=2))
         )
 
-        self.input_frame = ui.create_widget(
-            "frame", parent=self.main_paned_window,
-            width=600, height=300, relief=tk.RIDGE
-        )
+        self.user_frame = ui_user.build_input_frame(paned_window, self)
 
         self.controls_frame = ui.create_widget(
-            "frame", parent=self.main_paned_window,
-            width=600, height=40, relief=tk.RIDGE
+            "frame", parent=paned_window,
+            width=600, height=30, relief=tk.RIDGE
         )
 
         self.output_frame = ui.create_widget(
-            "frame", parent=self.main_paned_window,
+            "frame", parent=paned_window,
             width=600, height=350, relief=tk.RIDGE
         )
 
-        self.main_paned_window.add(self.input_frame, weight=4)
-        self.main_paned_window.add(self.controls_frame)
-        self.main_paned_window.add(self.output_frame, weight=5)
+        paned_window.add(self.user_frame, weight=4)
+        paned_window.add(self.controls_frame)
+        paned_window.add(self.output_frame, weight=5)
+
+        self.main_paned_window = paned_window
 
     def show_file_open_dialog(self) -> Optional[str]:
         """Open a file selection dialog and display a placeholder message."""
