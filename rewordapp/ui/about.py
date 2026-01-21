@@ -15,12 +15,12 @@ import rewordapp.ui as ui
 from rewordapp.ui import helper
 from rewordapp.ui import is_macos, is_linux
 
-from rewordapp.config import Data
+import rewordapp.config as config
 
-app_data = Data()
+app_data = config.Data()
 
 
-def create_about_window(
+def create_window(
     parent: Union[ui.Tk, ui.Toplevel],
     width: int = 460,
     height: int = 460
@@ -56,7 +56,7 @@ def add_main_panel(parent: ui.PanedWindow, width: int = 450, height: int = 20) -
     helper.create_styled_label(
         frame, text=app_data.main_app_text,
         increased_size=2, bold=True,
-        applied_layout=("grid", dict(row=0, column=0, columnspan=2, sticky=tk.W))
+        layout=("grid", dict(row=0, column=0, columnspan=2, sticky=tk.W))
     )
 
     return frame
@@ -73,11 +73,11 @@ def add_repository_link(
 
     helper.create_styled_label(
         cell_frame, text="Repository:", bold=True,
-        applied_layout=("pack", dict(side=tk.LEFT))
+        layout=("pack", dict(side=tk.LEFT))
     )
     helper.create_styled_label(
         cell_frame, text=app_data.repo_url, link=app_data.repo_url,
-        applied_layout=("pack", dict(side=tk.LEFT))
+        layout=("pack", dict(side=tk.LEFT))
     )
 
 
@@ -85,7 +85,7 @@ def add_dependency_panel(parent: Any) -> None:
     """Add a panel displaying PyPI dependencies with clickable package links."""
     helper.create_styled_label(
         parent, text="PyPI Dependencies:", bold=True,
-        applied_layout=("grid", dict(row=2, column=0, sticky=tk.W))
+        layout=("grid", dict(row=2, column=0, sticky=tk.W))
     )
 
     row, column = 3, 0
@@ -94,7 +94,7 @@ def add_dependency_panel(parent: Any) -> None:
             parent,
             text=pkg.get("package", pkg_name),
             link=pkg.get("url", ""),
-            applied_layout=("grid", dict(row=row, column=column % 2, padx=(20, 0), sticky=tk.W))
+            layout=("grid", dict(row=row, column=column % 2, padx=(20, 0), sticky=tk.W))
         )
 
         if column > 0 and column % 2 == 0:
@@ -141,15 +141,15 @@ def create_footer(
 
     helper.create_styled_label(
         frame, text=app_data.copyright_text,
-        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+        layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 
     helper.create_styled_label(
         frame, text=app_data.company, link=app_data.company_url,
-        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+        layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 
     helper.create_styled_label(
         frame, text=".  All rights reserved.",
-        applied_layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
+        layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )

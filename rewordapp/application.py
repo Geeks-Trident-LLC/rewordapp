@@ -53,14 +53,16 @@ class Application:
                 info=(
                     f"You selected: {filename}\n\n"
                     "File opening is not yet implemented in this preview build. "
-                    "Support for loading and editing files will be available in a future release."
+                    "Support for loading and editing files will be "
+                    "available in a future release."
                 ),
             )
         return filename
 
     def show_about_dialog(self) -> None:
-        """Display the About dialog with panels for app info, repository, dependencies, and license."""
-        about = ui_about.create_about_window(self.root)
+        """Display the About dialog with panels for app info,
+        repository, dependencies, and license."""
+        about = ui_about.create_window(self.root)
 
         top_frame = ui_about.create_main_frame(about)
         paned_window = ui_about.create_panel_window(top_frame)

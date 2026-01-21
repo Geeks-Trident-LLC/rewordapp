@@ -19,9 +19,10 @@ from tkinter.font import Font
 import tkinter as tk
 from tkinter import messagebox
 
-from rewordapp.config import Data
+import rewordapp.ui as ui
+import rewordapp.config as config
 
-app_data = Data()
+app_data = config.Data()
 
 
 def get_center_coordinates(
@@ -171,7 +172,7 @@ def show_message_dialog(
     # Default fallback: show info dialog
     return messagebox.showinfo(title=title, message=info or "", **options)
 
-
+@ui.apply_layout
 def create_styled_label(
     parent: tk.Widget,
     text: str = "",
@@ -180,7 +181,7 @@ def create_styled_label(
     bold: bool = False,
     underline: bool = False,
     italic: bool = False,
-    applied_layout: Optional[Tuple[str, Dict[str, Any]]] = None
+    layout: Optional[Tuple[str, Dict[str, Any]]] = None     # noqa
 ) -> ttk.Label:
     """Create a styled Tkinter label with optional hyperlink behavior.
 
@@ -200,7 +201,7 @@ def create_styled_label(
         If True, underlines the text. Default is False.
     italic : bool, optional
         If True, italicizes the text. Default is False.
-    applied_layout : tuple, optional
+    layout : tuple, optional
         Layout method and kwargs, e.g. ("grid", {"row":0, "column":0}).
 
     Returns
@@ -222,16 +223,15 @@ def create_styled_label(
     def mouse_press(event):
         webbrowser.open_new_tab(event.widget.link)
 
-    style = ttk.Style()
-    style.configure("Blue.TLabel", foreground="blue")
-
     if link:
-        label = ttk.Label(parent, text=text, style="Blue.TLabel")
+        style = ttk.Style()
+        style.configure("Blue.TLabel", foreground="blue")
+        label = ui.Label(parent, text=text, style="Blue.TLabel")
         label.bind("<Enter>", mouse_over)
         label.bind("<Leave>", mouse_out)
         label.bind("<Button-1>", mouse_press)
     else:
-        label = ttk.Label(parent, text=text)
+        label = ui.Label(parent, text=text)
 
     font = Font(name="TkDefaultFont", exists=True, root=label)
     font_spec = [font.cget("family"), font.cget("size") + increased_size]
@@ -245,13 +245,6 @@ def create_styled_label(
     label.configure(font=font_spec)
     label.font = font_spec
     label.link = link
-
-    if isinstance(applied_layout, (list, tuple)) and len(applied_layout) == 2:
-        case, kwargs = applied_layout
-        layout_methods = {"grid": label.grid, "pack": label.pack, "place": label.place}
-        func = layout_methods.get(case)
-        if func:
-            func(**kwargs)
 
     return label
 
