@@ -21,6 +21,7 @@ import rewordapp.ui.menu as ui_menu
 import rewordapp.ui.about as ui_about
 import rewordapp.ui.helper as ui_helper
 import rewordapp.ui.user as ui_user
+import rewordapp.ui.output as ui_output
 
 
 class Application:
@@ -69,11 +70,7 @@ class Application:
             width=600, height=30, relief=tk.RIDGE
         )
 
-        self.output_frame = ui.create_widget(
-            "frame", parent=paned_window,
-            width=600, height=350, relief=tk.RIDGE
-        )
-
+        self.output_frame = ui_output.build_output_frame(paned_window, self)
         paned_window.add(self.user_frame, weight=4)
         paned_window.add(self.controls_frame)
         paned_window.add(self.output_frame, weight=5)

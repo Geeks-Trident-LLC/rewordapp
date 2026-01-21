@@ -25,7 +25,7 @@ def create_window(
 ) -> ui.Toplevel:
     """Create and center the About dialog window within the given parent."""
     about = ui.Toplevel(parent)
-    parent.title("About - RewordApp CE")
+    about.title("About - RewordApp CE")
     ui_helper.center_window(parent, about, width, height)
     return about
 
