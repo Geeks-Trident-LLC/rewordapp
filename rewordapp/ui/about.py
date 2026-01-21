@@ -11,9 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import rewordapp.ui as ui
-
-from rewordapp.ui import helper
-from rewordapp.ui import is_macos, is_linux
+import rewordapp.ui.helper as ui_helper
 
 import rewordapp.config as config
 
@@ -28,7 +26,7 @@ def create_window(
     """Create and center the About dialog window within the given parent."""
     about = ui.Toplevel(parent)
     parent.title("About - RewordApp CE")
-    helper.center_window(parent, about, width, height)
+    ui_helper.center_window(parent, about, width, height)
     return about
 
 
@@ -53,7 +51,7 @@ def add_main_panel(parent: ui.PanedWindow, width: int = 450, height: int = 20) -
     frame = ui.Frame(parent, width=width, height=height)
     parent.add(frame, weight=4)
 
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         frame, text=app_data.main_app_text,
         increased_size=2, bold=True,
         layout=("grid", dict(row=0, column=0, columnspan=2, sticky=tk.W))
@@ -71,11 +69,11 @@ def add_repository_link(
     cell_frame = ui.Frame(parent, width=width, height=height)
     cell_frame.grid(row=1, column=0, sticky=tk.W, columnspan=2)
 
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         cell_frame, text="Repository:", bold=True,
         layout=("pack", dict(side=tk.LEFT))
     )
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         cell_frame, text=app_data.repo_url, link=app_data.repo_url,
         layout=("pack", dict(side=tk.LEFT))
     )
@@ -83,14 +81,14 @@ def add_repository_link(
 
 def add_dependency_panel(parent: Any) -> None:
     """Add a panel displaying PyPI dependencies with clickable package links."""
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         parent, text="PyPI Dependencies:", bold=True,
         layout=("grid", dict(row=2, column=0, sticky=tk.W))
     )
 
     row, column = 3, 0
     for pkg_name, pkg in app_data.get_dependency().items():
-        helper.create_styled_label(
+        ui_helper.create_styled_label(
             parent,
             text=pkg.get("package", pkg_name),
             link=pkg.get("url", ""),
@@ -115,8 +113,8 @@ def add_license_panel(
     parent.add(label_frame, weight=7)
 
     # Adjust text area size based on platform
-    text_width = 58 if is_macos else 51
-    text_height = 18 if is_macos else 14 if is_linux else 15
+    text_width = 58 if ui.is_macos else 51
+    text_height = 18 if ui.is_macos else 14 if ui.is_linux else 15
 
     text_area = ui.TextArea(label_frame, width=text_width, height=text_height, wrap="word")
     text_area.grid(row=0, column=0, padx=5, pady=5)
@@ -139,17 +137,17 @@ def create_footer(
     frame = ui.Frame(parent, width=width, height=height)
     parent.add(frame, weight=1)
 
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         frame, text=app_data.copyright_text,
         layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         frame, text=app_data.company, link=app_data.company_url,
         layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 
-    helper.create_styled_label(
+    ui_helper.create_styled_label(
         frame, text=".  All rights reserved.",
         layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )

@@ -18,7 +18,6 @@ import functools
 import tkinter as tk
 from tkinter import ttk
 
-
 is_macos = platform.system() == 'Darwin'
 is_linux = platform.system() == 'Linux'
 is_window = platform.system() == 'Windows'
@@ -63,3 +62,50 @@ def apply_layout(func: Callable) -> Callable:
         return widget
     return wrapper
 
+
+@apply_layout
+def create_widget(
+    widget_type: str,
+    parent: Optional[Any] = None,
+    layout: Optional[tuple] = None,  # noqa
+    **options: Any
+) -> Any:
+    """Instantiate a Tkinter widget by type and optionally apply a layout.
+
+    Parameters
+    ----------
+    widget_type : str
+        The type of widget to create (e.g., 'frame', 'label', 'button').
+    parent : object, optional
+        The parent container for the widget. If None, the widget is created standalone.
+    layout : tuple, optional
+        A tuple specifying the geometry manager ('grid', 'pack', or 'place')
+        and its options.
+    options : dict
+        Additional keyword arguments passed to the widget constructor.
+
+    Returns
+    -------
+    object
+        The created Tkinter widget instance.
+    """
+    widget_map: Dict[str, Any] = {
+        "panedwindow": PanedWindow,
+        "toplevel": Toplevel,
+        "frame": Frame,
+        "label": Label,
+        "labelframe": LabelFrame,
+        "button": Button,
+        "textbox": TextBox,
+        "textarea": TextArea,
+        "scrollbar": Scrollbar,
+        "radiobutton": RadioButton,
+        "checkbox": CheckBox,
+        "menu": Menu,
+    }
+
+    widget_class = widget_map.get(widget_type.lower())
+    if widget_class is None:
+        raise ValueError(f"Unsupported widget type: {widget_type}")
+
+    return widget_class(parent, **options) if parent else widget_class(**options)

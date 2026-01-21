@@ -16,9 +16,10 @@ from typing import Optional
 
 from tkinter import filedialog
 
-import rewordapp.ui.helper as ui_helper
-import rewordapp.ui.about as ui_about
+import rewordapp.ui as ui
 import rewordapp.ui.menu as ui_menu
+import rewordapp.ui.about as ui_about
+import rewordapp.ui.helper as ui_helper
 
 
 class Application:
@@ -32,13 +33,47 @@ class Application:
         self.root.minsize(200, 200)
         self.root.option_add("*tearOff", False)
 
+        # Tkinter widgets for main layout
+        self.main_paned_window = None   # container holding input, controls, and output frames
+        self.input_frame = None         # frame containing the user input textarea
+        self.controls_frame = None      # frame containing action buttons to process text
+        self.output_frame = None        # frame containing the output textarea
+
+        # methods call
         self._init_menu_bar()
+        self._init_main_frames()
 
     def _init_menu_bar(self) -> None:
         """Create and attach the main menu bar with File and Help menus."""
         menu_bar = ui_menu.create_menu_bar(self.root)
         ui_menu.add_file_menu(menu_bar, self)
         ui_menu.add_help_menu(menu_bar, self)
+
+    def _init_main_frames(self) -> None:
+        """Initialize and arrange the main frames in the application window."""
+        self.main_paned_window = ui.create_widget(
+            "panedwindow", parent=self.root, orient=tk.VERTICAL,
+            layout=("pack", dict(fill=tk.BOTH, expand=True, padx=2, pady=2))
+        )
+
+        self.input_frame = ui.create_widget(
+            "frame", parent=self.main_paned_window,
+            width=600, height=300, relief=tk.RIDGE
+        )
+
+        self.controls_frame = ui.create_widget(
+            "frame", parent=self.main_paned_window,
+            width=600, height=40, relief=tk.RIDGE
+        )
+
+        self.output_frame = ui.create_widget(
+            "frame", parent=self.main_paned_window,
+            width=600, height=350, relief=tk.RIDGE
+        )
+
+        self.main_paned_window.add(self.input_frame, weight=4)
+        self.main_paned_window.add(self.controls_frame)
+        self.main_paned_window.add(self.output_frame, weight=5)
 
     def show_file_open_dialog(self) -> Optional[str]:
         """Open a file selection dialog and display a placeholder message."""
@@ -48,7 +83,7 @@ class Application:
         ]
         filename = filedialog.askopenfilename(filetypes=filetypes)
         if filename:
-            ui_helper.show_message_dialog(
+            ui.helper.show_message_dialog(
                 title="File Selected",
                 info=(
                     f"You selected: {filename}\n\n"

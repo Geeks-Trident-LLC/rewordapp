@@ -7,7 +7,7 @@ This module defines the menu bar and its submenus for the RewordApp CE GUI.
 """
 
 import rewordapp.ui as ui
-from rewordapp.ui import helper as uihelper
+from rewordapp.ui import helper as ui_helper
 from typing import Any
 
 
@@ -37,11 +37,11 @@ def add_help_menu(parent: ui.Menu, app: Any) -> ui.Menu:
 
     help_menu.add_command(
         label="Documentation",
-        command=lambda: uihelper.open_app_resource("documentation"),
+        command=lambda: ui_helper.open_app_resource("documentation"),
     )
     help_menu.add_command(
         label="View Licenses",
-        command=lambda: uihelper.open_app_resource("license"),
+        command=lambda: ui_helper.open_app_resource("license"),
     )
     help_menu.add_separator()
     help_menu.add_command(label="About", command=app.show_about_dialog)
