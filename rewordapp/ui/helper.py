@@ -177,6 +177,7 @@ def create_styled_label(
     parent: tk.Widget,
     text: str = "",
     link: str = "",
+    options: dict = None,
     increased_size: int = 0,
     bold: bool = False,
     underline: bool = False,
@@ -193,6 +194,8 @@ def create_styled_label(
         Text to display in the label. Default is an empty string.
     link : str, optional
         URL to open when the label is clicked. Default is empty (no link).
+    options : dict, optional
+        other options initialize label
     increased_size : int, optional
         Amount to increase the base font size. Default is 0.
     bold : bool, optional
@@ -223,15 +226,17 @@ def create_styled_label(
     def mouse_press(event):
         webbrowser.open_new_tab(event.widget.link)
 
+    options = options if isinstance(options, dict) else {}
+
     if link:
         style = ttk.Style()
         style.configure("Blue.TLabel", foreground="blue")
-        label = ui.Label(parent, text=text, style="Blue.TLabel")
+        label = ui.Label(parent, text=text, style="Blue.TLabel", **options)
         label.bind("<Enter>", mouse_over)
         label.bind("<Leave>", mouse_out)
         label.bind("<Button-1>", mouse_press)
     else:
-        label = ui.Label(parent, text=text)
+        label = ui.Label(parent, text=text, **options)
 
     font = Font(name="TkDefaultFont", exists=True, root=label)
     font_spec = [font.cget("family"), font.cget("size") + increased_size]

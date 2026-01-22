@@ -21,7 +21,7 @@ app_data = config.Data()
 def create_window(
     parent: Union[ui.Tk, ui.Toplevel],
     width: int = 460,
-    height: int = 460
+    height: int = 480
 ) -> ui.Toplevel:
     """Create and center the About dialog window within the given parent."""
     about = ui.Toplevel(parent)
@@ -52,9 +52,10 @@ def add_main_panel(parent: ui.PanedWindow, width: int = 450, height: int = 20) -
     parent.add(frame, weight=4)
 
     ui_helper.create_styled_label(
-        frame, text=app_data.main_app_text,
-        increased_size=2, bold=True,
-        layout=("grid", dict(row=0, column=0, columnspan=2, sticky=tk.W))
+        frame, text=app_data.main_app_text + " " * 30,
+        options=dict(foreground="navy", background="lightgray"),
+        increased_size=8, bold=True, italic=True,
+        layout=("grid", dict(row=0, column=0, columnspan=2, sticky="nwe"))
     )
 
     return frame
