@@ -19,6 +19,7 @@ import rewordapp.ui.helper as ui_helper
 import rewordapp.ui.user as ui_user
 import rewordapp.ui.output as ui_output
 import rewordapp.ui.controls as ui_controls
+import rewordapp.ui.logo as ui_logo
 
 
 class Application:
@@ -42,6 +43,9 @@ class Application:
 
         self.output_frame = None        # frame containing the output textarea
         self.output_textarea = None
+
+        # load icon logo
+        ui_logo.set_window_icon(self.root)
 
         # methods call
         self._init_menu_bar()
@@ -76,6 +80,9 @@ class Application:
         """Display the About dialog with panels for app info,
         repository, dependencies, and license."""
         about = ui_about.create_window(self.root)
+
+        # load icon logo
+        ui_logo.set_window_icon(about)
 
         top_frame = ui_about.create_main_frame(about)
         paned_window = ui_about.create_panel_window(top_frame)

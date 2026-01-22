@@ -1,3 +1,10 @@
+# Documentation and license
 include README.md
 include LICENSE
-recursive-include rewordapp *.py *.yaml
+
+# Application assets
+include rewordapp/ui/images/icon_logo.png
+
+# Source files
+recursive-include rewordapp *.py
+recursive-include rewordapp *.yaml
