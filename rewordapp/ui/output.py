@@ -36,6 +36,7 @@ def _add_textarea_with_scrollbars(parent, app):
         wrap="none",
         layout=("grid", {"row": 0, "column": 0, "sticky": "nswe"}),
     )
+    textarea.config(state=ui.tk.DISABLED)
 
     vscrollbar = ui.create_widget(
         "scrollbar",

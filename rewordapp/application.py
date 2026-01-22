@@ -12,16 +12,13 @@ from regexapp.deps import genericlib_ensure_tkinter_available as ensure_tkinter_
 
 tk = ensure_tkinter_available(app_name="Rewordapp")
 
-from typing import Optional
-
-from tkinter import filedialog
-
 import rewordapp.ui as ui
 import rewordapp.ui.menu as ui_menu
 import rewordapp.ui.about as ui_about
 import rewordapp.ui.helper as ui_helper
 import rewordapp.ui.user as ui_user
 import rewordapp.ui.output as ui_output
+import rewordapp.ui.controls as ui_controls
 
 
 class Application:
@@ -65,36 +62,15 @@ class Application:
 
         self.user_frame = ui_user.build_input_frame(paned_window, self)
 
-        self.controls_frame = ui.create_widget(
-            "frame", parent=paned_window,
-            width=600, height=30, relief=tk.RIDGE
-        )
+        self.controls_frame = ui_controls.build_controls_frame(paned_window, self)  # noqa
 
         self.output_frame = ui_output.build_output_frame(paned_window, self)
+
         paned_window.add(self.user_frame, weight=4)
         paned_window.add(self.controls_frame)
         paned_window.add(self.output_frame, weight=5)
 
         self.main_paned_window = paned_window
-
-    def show_file_open_dialog(self) -> Optional[str]:
-        """Open a file selection dialog and display a placeholder message."""
-        filetypes = [
-            ("Text Files", "*.txt"),
-            ("All Files", "*.*"),
-        ]
-        filename = filedialog.askopenfilename(filetypes=filetypes)
-        if filename:
-            ui.helper.show_message_dialog(
-                title="File Selected",
-                info=(
-                    f"You selected: {filename}\n\n"
-                    "File opening is not yet implemented in this preview build. "
-                    "Support for loading and editing files will be "
-                    "available in a future release."
-                ),
-            )
-        return filename
 
     def show_about_dialog(self) -> None:
         """Display the About dialog with panels for app info,

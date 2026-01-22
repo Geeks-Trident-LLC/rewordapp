@@ -22,6 +22,8 @@ is_macos = platform.system() == 'Darwin'
 is_linux = platform.system() == 'Linux'
 is_window = platform.system() == 'Windows'
 
+from tkinter import filedialog
+
 
 Tk = tk.Tk
 

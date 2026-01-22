@@ -8,6 +8,7 @@ This module defines the menu bar and its submenus for the RewordApp CE GUI.
 
 import rewordapp.ui as ui
 from rewordapp.ui import helper as ui_helper
+from rewordapp.ui import controls as ui_controls
 from typing import Any
 
 
@@ -23,7 +24,7 @@ def add_file_menu(parent: ui.Menu, app: Any) -> ui.Menu:
     file_menu = ui.Menu(parent)
     parent.add_cascade(menu=file_menu, label="File")
 
-    file_menu.add_command(label="Open", command=app.show_file_open_dialog)
+    file_menu.add_command(label="Open", command=lambda: ui_controls.import_file_to_input(app))
     file_menu.add_separator()
     file_menu.add_command(label="Quit", command=app.root.quit)
 
