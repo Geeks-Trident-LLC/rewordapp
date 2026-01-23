@@ -22,7 +22,9 @@ from rewordapp.netparser import NetworkParser
                 "suffix": "",
                 "network": "1.1.1.1",
                 "address": "1.1.1.1",
+                "full_address": "1.1.1.1",
                 "subnet": "",
+                "version": 4
             },
         ),
         (
@@ -32,7 +34,9 @@ from rewordapp.netparser import NetworkParser
                 "suffix": "",
                 "network": "1.1.1.1/32",
                 "address": "1.1.1.1",
+                "full_address": "1.1.1.1",
                 "subnet": "32",
+                "version": 4
             },
         ),
         (
@@ -42,7 +46,9 @@ from rewordapp.netparser import NetworkParser
                 "suffix": ",",
                 "network": "1.1.1.1/32",
                 "address": "1.1.1.1",
+                "full_address": "1.1.1.1",
                 "subnet": "32",
+                "version": 4
             },
         ),
         (
@@ -52,7 +58,9 @@ from rewordapp.netparser import NetworkParser
                 "suffix": ")",
                 "network": "1.1.1.1/32",
                 "address": "1.1.1.1",
+                "full_address": "1.1.1.1",
                 "subnet": "32",
+                "version": 4
             },
         ),
     ],
@@ -64,7 +72,9 @@ def test_parse_ipv4_address(data, expected):
     assert parsed_network.suffix == expected.get("suffix")
     assert parsed_network.network== expected.get("network")
     assert parsed_network.address == expected.get("address")
+    assert parsed_network.full_address == expected.get("full_address")
     assert parsed_network.subnet == expected.get("subnet")
+    assert parsed_network.version == expected.get("version")
 
 @pytest.mark.parametrize(
     "data, expected",
@@ -76,7 +86,9 @@ def test_parse_ipv4_address(data, expected):
                 "suffix": "",
                 "network": "1::a",
                 "address": "1::a",
+                "full_address": "0001:0000:0000:0000:0000:0000:0000:000a",
                 "subnet": "",
+                "version": 6
             },
         ),
         (
@@ -86,7 +98,9 @@ def test_parse_ipv4_address(data, expected):
                 "suffix": "",
                 "network": "1::a/128",
                 "address": "1::a",
+                "full_address": "0001:0000:0000:0000:0000:0000:0000:000a",
                 "subnet": "128",
+                "version": 6
             },
         ),
         (
@@ -96,7 +110,9 @@ def test_parse_ipv4_address(data, expected):
                 "suffix": ",",
                 "network": "1::a/128",
                 "address": "1::a",
+                "full_address": "0001:0000:0000:0000:0000:0000:0000:000a",
                 "subnet": "128",
+                "version": 6
             },
         ),
         (
@@ -106,7 +122,9 @@ def test_parse_ipv4_address(data, expected):
                 "suffix": ")",
                 "network": "1::a/128",
                 "address": "1::a",
+                "full_address": "0001:0000:0000:0000:0000:0000:0000:000a",
                 "subnet": "128",
+                "version": 6
             },
         ),
     ],
@@ -118,4 +136,6 @@ def test_parse_ipv6_address(data, expected):
     assert parsed_network.suffix == expected.get("suffix")
     assert parsed_network.network== expected.get("network")
     assert parsed_network.address == expected.get("address")
+    assert parsed_network.full_address == expected.get("full_address")
     assert parsed_network.subnet == expected.get("subnet")
+    assert parsed_network.version == expected.get("version")
