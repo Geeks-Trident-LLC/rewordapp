@@ -14,7 +14,7 @@ def is_valid_network(network: str) -> bool:
     including optional subnet length.
     """
     try:
-        # Split into ip_type address and optional subnet
+        # Split into protocol address and optional subnet
         address, *parts = re.split(r"[%/]", network, maxsplit=2)
         subnet = parts[0] if parts else None
 
@@ -43,7 +43,7 @@ def generate_alternate_octet(octet) -> str:
     octet : "Octet"
         An object with attributes:
         - value (int): The current octet value.
-        - ip_type (int): Either 4 (IPv4) or 6 (IPv6).
+        - protocol (int): Either 4 (IPv4) or 6 (IPv6).
 
     Returns
     -------
@@ -58,13 +58,13 @@ def generate_alternate_octet(octet) -> str:
     - IPv6 ranges are segmented into 4-bit blocks: 0–15, 16–255, 256–4095, 4096–65535.
     """
     original_value = octet.value
-    ip_type = octet.ip_type
+    protocol = octet.protocol
 
     if original_value == 0:
         return "0"
 
     # Define range boundaries
-    if ip_type == 4:
+    if protocol == 4:
         boundaries: Sequence[int] = (10, 100, 256)
     else:
         boundaries = (16, 256, 4096, 65536)
@@ -80,7 +80,7 @@ def generate_alternate_octet(octet) -> str:
             new_value = random.choice(candidates)
 
             # Format output
-            return str(new_value) if ip_type == 4 else format(new_value, "x")
+            return str(new_value) if protocol == 4 else format(new_value, "x")
 
         start = stop
 
@@ -95,7 +95,7 @@ class Octet:
     for generating alternate values.
     """
 
-    def __init__(self, data: str = "", position: int = 0, ip_type: int = 4):
+    def __init__(self, data: str = "", position: int = 0, protocol: int = 4):
         """
         Parameters
         ----------
@@ -103,19 +103,19 @@ class Octet:
             The octet value in string form (decimal for IPv4, hex for IPv6).
         position : int
             Index of this octet within the full address.
-        ip_type : int
+        protocol : int
             Either 4 (IPv4) or 6 (IPv6).
         """
-        self.ip_type = ip_type
+        self.protocol = protocol
         self.data = str(data)
         self.position = position
 
-        base = 10 if ip_type == 4 else 16
+        base = 10 if protocol == 4 else 16
         self.value = int(self.data, base=base) if self.data else 0
 
     @property
     def hex_value(self):
-        return format(self.value, "02x" if self.ip_type == 4 else "04x")
+        return format(self.value, "02x" if self.protocol == 4 else "04x")
 
     def __len__(self) -> int:
         """Return 1 if the octet contains data, otherwise 0."""
@@ -143,7 +143,7 @@ class Octet:
         using the alternate-octet generator.
         """
         new_data = generate_alternate_octet(self)
-        return Octet(data=new_data, position=self.position, ip_type=self.ip_type)
+        return Octet(data=new_data, position=self.position, protocol=self.protocol)
 
 
 class Octets:
@@ -152,12 +152,12 @@ class Octets:
     for cloning and generating alternate addresses.
     """
 
-    def __init__(self, address: str = ""):
+    def __init__(self, address: str = "", protocol=0):
         """
         Initialize and parse an IPv4/IPv6 address into Octet objects.
         """
         self.address = address.strip()
-        self.ip_type = 4
+        self.protocol = protocol
         self.octets: List[Octet] = []
         self._parse_address()
 
@@ -172,21 +172,20 @@ class Octets:
     @property
     def is_ipv4(self) -> bool:
         """Return True if the address is IPv4."""
-        return self.ip_type == 4
+        return self.protocol == 4
 
     @property
     def is_ipv6(self) -> bool:
         """Return True if the address is IPv6."""
-        return self.ip_type == 6
+        return self.protocol == 6
 
     def _parse_address(self) -> None:
         """Split the address and build Octet objects."""
         parts = re.split(r"[.:]", self.address)
-        self.ip_type = 4 if len(parts) == 4 else 6
 
         for position, value in enumerate(parts):
             self.octets.append(
-                Octet(data=value, position=position, ip_type=self.ip_type)
+                Octet(data=value, position=position, protocol=self.protocol)
             )
 
     def contains_octet(self, octet):
@@ -214,26 +213,45 @@ class Octets:
                 return octet
         return self.get_octet(0)
 
+    def total_nonzero_octet(self) -> int:
+        """Return the total number of octets whose value is greater than zero."""
+        total = 0
+        for octet in self.octets:
+            if octet.value > 0:
+                total += 1
+        return total
+
     def generate_new(self) -> "Octets":
         """Generate a new octets"""
-        first_nonzero = self.first_nonzero_octet()
-        pivot = first_nonzero.position + 1 if self.is_ipv6 else 1
-        new_octets = [o.clone() for o in self.octets[:pivot]]
 
-        for index in range(pivot, len(self.octets)):
-            new_octets.append(self.get_octet(index).generate_new())
+        if self.total_nonzero_octet() <= 1:
+            new_octets = [o.generate_new() if o.value > 0 else o.clone() for o in self.octets]
+        else:
+            first_nonzero = self.first_nonzero_octet()
+            pivot = first_nonzero.position + 1 if self.is_ipv6 else 1
+            new_octets = [o.clone() for o in self.octets[:pivot]]
 
-        if self.ip_type == 4:
+            for index in range(pivot, len(self.octets)):
+                new_octets.append(self.get_octet(index).generate_new())
+
+        if self.protocol == 4:
             new_address = ".".join(str(o.value) for o in new_octets)
-            return self.__class__(address=new_address)
+            return self.__class__(address=new_address, protocol=self.protocol)
 
         new_address = ":".join(o.hex_value for o in new_octets)
-        return self.__class__(address=new_address)
+        return self.__class__(address=new_address, protocol=self.protocol)
 
     def to_address(self) -> str:
         """Return the address as a string."""
         joiner = "." if self.is_ipv4 else ":"
-        return joiner.join(o.data for o in self.octets)
+        address = joiner.join(o.data for o in self.octets)
+        return ipaddress.ip_address(address).compressed
+
+    def to_full_address(self) -> str:
+        """Return the full address as a string."""
+        joiner = "." if self.is_ipv4 else ":"
+        address = joiner.join(o.data for o in self.octets)
+        return ipaddress.ip_address(address).exploded
 
 
 class NetworkParser:
@@ -327,7 +345,9 @@ class NetworkParser:
             self.network_info.update(full_address=addr.exploded)
             self.network_info.update(version=addr.version)
             self.network_info.update(value=int(addr))
-            self.network_info.update(octets=Octets(address=addr.exploded))
+            self.network_info.update(
+                octets=Octets(address=addr.exploded, protocol=addr.version)
+            )
         self.network_info.subnet = parsed.get("subnet", "")
         self._prefix = parsed.get("prefix", "")
         self._suffix = parsed.get("suffix", "")
@@ -336,7 +356,7 @@ class NetworkParser:
         """Attempt to parse IPv6 address with optional subnet."""
         pattern = r"""
             (?ix)
-            (?P<prefix>.*[^0-9a-f])?
+            (?P<prefix>.*[^0-9a-f:])?
             (?P<network>
                 (?P<address>
                     ([0-9a-f]{1,4}(:[0-9a-f]{1,4}){7})|
@@ -351,7 +371,7 @@ class NetworkParser:
                 )
                 ([/%](?P<subnet>\d{1,3}))?
             )
-            (?P<suffix>[^0-9a-f].*)?$
+            (?P<suffix>[^0-9a-f:].*)?$
         """.strip()
         matched, result = self._match_regex(pattern)
         if not matched or not is_valid_network(result.get("network")):
@@ -435,6 +455,55 @@ class IPv4Parser(NetworkParser):
             current_octet = self.octets.get_octet(index)
             matching_sources = [
                 src for src in ipv4_sources
+                if src.octets.contains_octet(current_octet)
+            ]
+            if matching_sources:
+                self.new_parser.octets.sync_by_position(
+                    matching_sources[0].new_parser.octets,
+                    current_octet.position
+                )
+
+        return self.new_parser
+
+
+class IPv6Parser(NetworkParser):
+    """Parser for IPv6 addresses with utilities for netmask validation and regeneration."""
+
+    def generate_new(self, source_parsers=None):
+        """
+        Generate a new IPv6Parser instance based on alternate octet generation
+        and optional reference patterns from other IPv6Parser objects.
+        """
+        source_parsers = source_parsers if isinstance(source_parsers, (list, tuple)) else []
+
+        # Build new base address
+        new_base = self.octets.generate_new().to_address()
+        combined = (
+            f"{new_base}{self.subnet_joiner}{self.subnet}"
+            if self.subnet
+            else new_base
+        )
+
+        self.new_parser = IPv6Parser(combined)
+
+        # Filter only IPv6 sources
+        ipv6_sources = [src for src in source_parsers if src.version == 6]
+        if not ipv6_sources:
+            return self.new_parser
+
+        # If an identical source exists, sync directly
+        identical = [src for src in ipv6_sources if src.value == self.value]
+        if identical:
+            self.new_parser.sync_octets(identical[0].new_parser)
+            return self.new_parser
+
+        first_nonzero = self.octets.first_nonzero_octet()
+        pivot = first_nonzero.position + 1
+
+        for index in range(pivot, 8):
+            current_octet = self.octets.get_octet(index)
+            matching_sources = [
+                src for src in ipv6_sources
                 if src.octets.contains_octet(current_octet)
             ]
             if matching_sources:
