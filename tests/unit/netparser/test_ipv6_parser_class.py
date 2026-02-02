@@ -24,7 +24,8 @@ from rewordapp.netparser import IPv6Parser
         "2601:646:8200:8c1e:dd99:4c3f:4edc:ac40"
     ],
 )
-def test_generate_new_method(network):
+def test_generate_new_basic_behavior(network):
+    """Verify generate_new() preserves or changes octets as expected."""
     parser = IPv6Parser(network)
     new_parser = parser.generate_new()
     if parser.value == 0:
@@ -41,11 +42,12 @@ def test_generate_new_method(network):
 
 
 def test_generate_new_method_with_source_parser():
-
+    """Ensure octet syncing works when source parsers are provided."""
     source_parsers = []
 
     for addr in [
         "2701:946:200:8c1e::2dd0",
+        "2701:646:2a0:8c1e::2dd0",
         "2601:646:2a0:8c1e::ac40"
     ]:
         parser = IPv6Parser(addr)
@@ -57,6 +59,7 @@ def test_generate_new_method_with_source_parser():
 
     expects = [
         (True, False, False, True, True, True, True, True),
+        (True, True, True, True, True, True, True, True),
         (False, True, True, True, True, True, True, False),
     ]
 

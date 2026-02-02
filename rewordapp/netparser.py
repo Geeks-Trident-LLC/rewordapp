@@ -14,7 +14,7 @@ def is_valid_network(network: str) -> bool:
     including optional subnet length.
     """
     try:
-        # Split into protocol address and optional subnet
+        # Split into network address and optional subnet
         address, *parts = re.split(r"[%/]", network, maxsplit=2)
         subnet = parts[0] if parts else None
 
@@ -34,59 +34,44 @@ def is_valid_network(network: str) -> bool:
         return False
 
 
-def generate_alternate_octet(octet) -> str:
-    """
-    Generate a new octet value different from the original, based on IPv4 or IPv6 rules.
+def pick_new_octet_value(octet) -> str:
+    """Return a new octet value different from the original."""
+    value = octet.value
+    net_type = octet.net_type
 
-    Parameters
-    ----------
-    octet : "Octet"
-        An object with attributes:
-        - value (int): The current octet value.
-        - protocol (int): Either 4 (IPv4) or 6 (IPv6).
-
-    Returns
-    -------
-    str
-        A new octet value as a string. For IPv4, the value is returned in decimal.
-        For IPv6, the value is returned in hexadecimal (without the '0x' prefix).
-
-    Notes
-    -----
-    - For IPv6, if the value is 0, the function returns "0".
-    - IPv4 ranges are segmented into: [0–9], [10–99], [100–255].
-    - IPv6 ranges are segmented into 4-bit blocks: 0–15, 16–255, 256–4095, 4096–65535.
-    """
-    original_value = octet.value
-    protocol = octet.protocol
-
-    if original_value == 0:
+    # Zero-handling
+    if value == 0:
+        if net_type == "mac":
+            return "00" if octet.width == 2 else "000"
         return "0"
 
-    # Define range boundaries
-    if protocol == 4:
+    # Range boundaries by net_type
+    if net_type == "ipv4":
         boundaries: Sequence[int] = (10, 100, 256)
-    else:
+    elif net_type == "ipv6":
         boundaries = (16, 256, 4096, 65536)
+    else:  # MAC or other hex-based
+        boundaries = (16, 256, 4096)
 
     start = 0
     for stop in boundaries:
-        if start <= original_value < stop:
-            # Build candidate pool excluding the original value
+        if start <= value < stop:
             candidates = list(range(start, stop))
-            candidates.remove(original_value)
-
-            # Choose a new value
+            candidates.remove(value)
             new_value = random.choice(candidates)
 
-            # Format output
-            return str(new_value) if protocol == 4 else format(new_value, "x")
+            if net_type == "mac":
+                return format(new_value, "02x" if octet.width == 2 else "03x")
+            if net_type == "ipv4":
+                return str(new_value)
+            return format(new_value, "x")
 
         start = stop
 
-    # Fallback (should rarely occur)
-    return "0"
-
+    # Fallback
+    if net_type in ("ipv4", "ipv6"):
+        return "0"
+    return "00" if octet.width == 2 else "000"
 
 
 class Octet:
@@ -95,7 +80,7 @@ class Octet:
     for generating alternate values.
     """
 
-    def __init__(self, data: str = "", position: int = 0, protocol: int = 4):
+    def __init__(self, data: str = "", position: int = 0, net_type: str = ""):
         """
         Parameters
         ----------
@@ -103,19 +88,22 @@ class Octet:
             The octet value in string form (decimal for IPv4, hex for IPv6).
         position : int
             Index of this octet within the full address.
-        protocol : int
-            Either 4 (IPv4) or 6 (IPv6).
+        net_type : str or optional
+            ipv4, ipv6, or MAC.
         """
-        self.protocol = protocol
+        self.net_type = net_type
         self.data = str(data)
+        self.width = len(self.data)
         self.position = position
 
-        base = 10 if protocol == 4 else 16
+        base = 10 if net_type == "ipv4" else 16
         self.value = int(self.data, base=base) if self.data else 0
 
     @property
     def hex_value(self):
-        return format(self.value, "02x" if self.protocol == 4 else "04x")
+        if self.net_type == "mac":
+            return format(self.value, "02x" if self.width == 2 else "03x")
+        return format(self.value, "02x" if self.net_type == "ipv4" else "04x")
 
     def __len__(self) -> int:
         """Return 1 if the octet contains data, otherwise 0."""
@@ -142,8 +130,8 @@ class Octet:
         Create a new Octet instance with a different value
         using the alternate-octet generator.
         """
-        new_data = generate_alternate_octet(self)
-        return Octet(data=new_data, position=self.position, protocol=self.protocol)
+        new_data = pick_new_octet_value(self)
+        return Octet(data=new_data, position=self.position, net_type=self.net_type)
 
 
 class Octets:
@@ -152,12 +140,12 @@ class Octets:
     for cloning and generating alternate addresses.
     """
 
-    def __init__(self, address: str = "", protocol=0):
+    def __init__(self, address: str = "", net_type=""):
         """
         Initialize and parse an IPv4/IPv6 address into Octet objects.
         """
         self.address = address.strip()
-        self.protocol = protocol
+        self.net_type = net_type
         self.octets: List[Octet] = []
         self._parse_address()
 
@@ -172,20 +160,27 @@ class Octets:
     @property
     def is_ipv4(self) -> bool:
         """Return True if the address is IPv4."""
-        return self.protocol == 4
+        return self.net_type == "ipv4"
 
     @property
     def is_ipv6(self) -> bool:
         """Return True if the address is IPv6."""
-        return self.protocol == 6
+        return self.net_type == "ipv6"
+
+    @property
+    def is_mac(self):
+        """Return True if the address is MAC."""
+        return self.net_type == "mac"
 
     def _parse_address(self) -> None:
         """Split the address and build Octet objects."""
-        parts = re.split(r"[.:]", self.address)
+        parts = re.findall(r"\w\w", self.address)
+        if re.search(r"[.:-]", self.address):
+            parts = re.split(r"[.:-]", self.address)
 
         for position, value in enumerate(parts):
             self.octets.append(
-                Octet(data=value, position=position, protocol=self.protocol)
+                Octet(data=value, position=position, net_type=self.net_type)
             )
 
     def contains_octet(self, octet):
@@ -224,34 +219,49 @@ class Octets:
     def generate_new(self) -> "Octets":
         """Generate a new octets"""
 
-        if self.total_nonzero_octet() <= 1:
-            new_octets = [o.generate_new() if o.value > 0 else o.clone() for o in self.octets]
+        if self.net_type == "mac":
+            half = 2 if len(self) == 4 else 3
+            new_octets = [o.clone() for o in self.octets[:half]] + [
+                o.generate_new() for o in self.octets[half:]]
         else:
-            first_nonzero = self.first_nonzero_octet()
-            pivot = first_nonzero.position + 1 if self.is_ipv6 else 1
-            new_octets = [o.clone() for o in self.octets[:pivot]]
+            if self.total_nonzero_octet() <= 1:
+                # new_octets = [o.generate_new() if o.value > 0 else o.clone() for o in self.octets]
+                new_octets = [o.generate_new() for o in self.octets]
+            else:
+                first_nonzero = self.first_nonzero_octet()
+                pivot = first_nonzero.position + 1 if self.is_ipv6 else 1
+                new_octets = [o.clone() for o in self.octets[:pivot]]
 
-            for index in range(pivot, len(self.octets)):
-                new_octets.append(self.get_octet(index).generate_new())
+                for index in range(pivot, len(self.octets)):
+                    new_octets.append(self.get_octet(index).generate_new())
 
-        if self.protocol == 4:
+        if self.net_type == "ipv4":
             new_address = ".".join(str(o.value) for o in new_octets)
-            return self.__class__(address=new_address, protocol=self.protocol)
-
-        new_address = ":".join(o.hex_value for o in new_octets)
-        return self.__class__(address=new_address, protocol=self.protocol)
+            return self.__class__(address=new_address, net_type=self.net_type)
+        elif self.net_type == "ipv6":
+            new_address = ":".join(o.hex_value for o in new_octets)
+            return self.__class__(address=new_address, net_type=self.net_type)
+        else:
+            match = re.search("[:.-]", self.address)
+            joiner = match.group() if match else ""
+            new_address = joiner.join(o.hex_value for o in new_octets)
+            return self.__class__(address=new_address, net_type=self.net_type)
 
     def to_address(self) -> str:
         """Return the address as a string."""
-        joiner = "." if self.is_ipv4 else ":"
-        address = joiner.join(o.data for o in self.octets)
-        return ipaddress.ip_address(address).compressed
+        if self.net_type in ("ipv4", "ipv6"):
+            joiner = "." if self.is_ipv4 else ":"
+            address = joiner.join(o.data for o in self.octets)
+            return ipaddress.ip_address(address).compressed
+        return self.address
 
     def to_full_address(self) -> str:
         """Return the full address as a string."""
-        joiner = "." if self.is_ipv4 else ":"
-        address = joiner.join(o.data for o in self.octets)
-        return ipaddress.ip_address(address).exploded
+        if self.net_type in ("ipv4", "ipv6"):
+            joiner = "." if self.is_ipv4 else ":"
+            address = joiner.join(o.data for o in self.octets)
+            return ipaddress.ip_address(address).exploded
+        return self.address
 
 
 class NetworkParser:
@@ -336,7 +346,7 @@ class NetworkParser:
         match = re.match(pattern, self._text)
         return (True, match.groupdict()) if match else (False, {})
 
-    def _set_network_info(self, parsed: dict) -> None:
+    def _apply_parsed_fields(self, parsed: dict) -> None:
         """Update network_info fields from regex results."""
         self.network_info.network = parsed.get("network", "")
         self.network_info.address = parsed.get("address", "")
@@ -346,7 +356,10 @@ class NetworkParser:
             self.network_info.update(version=addr.version)
             self.network_info.update(value=int(addr))
             self.network_info.update(
-                octets=Octets(address=addr.exploded, protocol=addr.version)
+                octets=Octets(
+                    address=addr.exploded,
+                    net_type="ipv4" if addr.version == 4 else "ipv6"
+                )
             )
         self.network_info.subnet = parsed.get("subnet", "")
         self._prefix = parsed.get("prefix", "")
@@ -376,7 +389,7 @@ class NetworkParser:
         matched, result = self._match_regex(pattern)
         if not matched or not is_valid_network(result.get("network")):
             return False
-        self._set_network_info(result)
+        self._apply_parsed_fields(result)
         return True
 
     def _parse_ipv4(self) -> bool:
@@ -393,7 +406,7 @@ class NetworkParser:
         matched, result = self._match_regex(pattern)
         if not matched or not is_valid_network(result.get("network")):
             return False
-        self._set_network_info(result)
+        self._apply_parsed_fields(result)
         return True
 
     def _parse_network(self) -> None:
@@ -402,11 +415,12 @@ class NetworkParser:
             self._parse_ipv4()
 
     def sync_octets(self, other):
-        if type(self) == type(other):
-            for index, octet in enumerate(self.network_info.octets):
+        if type(self) == type(other) and len(self.octets) == len(other.octets):
+            octets = self.network_info.octets.octets
+            for index, octet in enumerate(octets):
                 other_octet = other.octets.get_octet(index)
                 if octet != other_octet:
-                    self.network_info.octets[index] = other_octet.clone()
+                    octets[index] = other_octet.clone()
 
 
 class IPv4Parser(NetworkParser):
@@ -510,6 +524,156 @@ class IPv6Parser(NetworkParser):
                 self.new_parser.octets.sync_by_position(
                     matching_sources[0].new_parser.octets,
                     current_octet.position
+                )
+
+        return self.new_parser
+
+
+class MACParser:
+    """Parse a MAC address and expose its components."""
+
+    def __init__(self, text: str):
+        self._text = text
+        self._prefix = ""
+        self._suffix = ""
+        self.new_parser = None
+
+        self.network_info = DotObject(
+            address="",
+            value=0,
+            octets=Octets(address="", net_type="mac"),
+        )
+
+        self._parse_mac()
+
+    # ------------------------------------------------------------
+    # Magic methods
+    # ------------------------------------------------------------
+
+    def __len__(self) -> int:
+        """Return 1 if a MAC address was parsed, else 0."""
+        return 1 if self.network_info.address else 0
+
+    def __bool__(self) -> bool:
+        """Return True if a MAC address was parsed."""
+        return bool(self.network_info.address)
+
+    # ------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------
+
+    @property
+    def raw_text(self) -> str:
+        return self._text
+
+    @property
+    def prefix(self) -> str:
+        return self._prefix
+
+    @property
+    def suffix(self) -> str:
+        return self._suffix
+
+    @property
+    def address(self) -> str:
+        return self.network_info.address
+
+    @property
+    def value(self) -> int:
+        return self.network_info.value
+
+    @property
+    def octets(self) -> Octets:
+        return self.network_info.octets
+
+    # ------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------
+
+    def _apply_parsed_fields(self, parsed: dict) -> None:
+        """Populate network_info and prefix/suffix from regex results."""
+        addr = parsed.get("address", "")
+        if addr:
+            cleaned = re.sub(r"[.:-]", "", addr)
+            self.network_info.address = addr
+            self.network_info.value = int(cleaned, 16)
+            self.network_info.octets = Octets(address=addr, net_type="mac")
+
+        self._prefix = parsed.get("prefix", "") or ""
+        self._suffix = parsed.get("suffix", "") or ""
+
+    def _parse_mac(self) -> None:
+        """Parse MAC address from raw text."""
+        pattern = r"""
+            (?ix)
+            (?P<prefix>.*[^0-9a-f])?
+            (?P<address>
+                ([0-9a-f]{2}(:[0-9a-f]{2}){5}) |
+                ([0-9a-f]{2}(-[0-9a-f]{2}){5}) |
+                ([0-9a-f]{3}([.][0-9a-f]{3}){3}) |
+                ([0-9a-f]{12})
+            )
+            (?P<suffix>[^0-9a-f].*)?$
+        """.strip()
+
+        match = re.match(pattern, self._text)
+        if not match:
+            return
+
+        # Reject pure numeric strings (e.g., "000000000000")
+        if re.sub(r"[0-9.]", "", match.group("address")) == "":
+            return
+
+        self._apply_parsed_fields(match.groupdict())
+
+    # ------------------------------------------------------------
+    # Sync & generation
+    # ------------------------------------------------------------
+
+    def sync_octets(self, other) -> None:
+        """Sync octets with another parser of the same type."""
+        if type(self) == type(other) and len(self.octets) == len(other.octets):
+            octets = self.network_info.octets.octets
+            for index, octet in enumerate(octets):
+                other_octet = other.octets.get_octet(index)
+                if octet != other_octet:
+                    octets[index] = other_octet.clone()
+
+    def generate_new(self, source_parsers=None):
+        """Generate a new MAC-like address based on source patterns."""
+        # Broadcast or zero MAC → return unchanged
+        if self.value in (0, int("f" * 12, 16)):
+            self.new_parser = MACParser(self.address)
+            return self.new_parser
+
+        source_parsers = (
+            source_parsers if isinstance(source_parsers, (list, tuple)) else []
+        )
+
+        # Generate new base address
+        new_address = self.octets.generate_new().to_address()
+        self.new_parser = MACParser(new_address)
+
+        # Sync with identical source if present
+        identical_sources = [src for src in source_parsers if src.value == self.value]
+        if identical_sources:
+            self.new_parser.sync_octets(identical_sources[0].new_parser)
+            return self.new_parser
+
+        # Determine sync range
+        start, stop = (3, 6) if len(self.octets) == 6 else (2, 4)
+
+        # Sync matching octets by position
+        for idx in range(start, stop):
+            current = self.octets.get_octet(idx)
+            matches = [
+                src for src in source_parsers
+                if src.octets.contains_octet(current)
+            ]
+            if matches:
+                self.new_parser.octets.sync_by_position(
+                    matches[0].new_parser.octets,
+                    current.position
                 )
 
         return self.new_parser

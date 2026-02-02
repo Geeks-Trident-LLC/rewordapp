@@ -58,7 +58,8 @@ def test_valid_netmask_method(network, expected):
     assert parser.is_valid_netmask() == expected
 
 
-def test_generate_new_method():
+def test_generate_new_basic_behavior():
+    """Verify generate_new() preserves or changes octets as expected."""
     parser = IPv4Parser("255.255.255.255")
     new_parse = parser.generate_new()
     assert parser.value == new_parse.value
@@ -72,11 +73,12 @@ def test_generate_new_method():
 
 
 def test_generate_new_method_with_source_parser():
-
+    """Ensure octet syncing works when source parsers are provided."""
     source_parsers = []
 
     for addr in [
         "192.168.1.1",
+        "192.10.1.30",
         "172.10.20.30",
         "10.0.1.10"
     ]:
@@ -89,6 +91,7 @@ def test_generate_new_method_with_source_parser():
 
     expects = [
         (True, False, True, False),
+        (True, True, True, True),
         (False, True, False, True),
         (False, False, True, False)
     ]
