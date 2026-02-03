@@ -1,3 +1,12 @@
+"""
+rewordapp.ui.controls
+---------------------
+
+Utilities for loading and displaying the RewordApp logo.
+
+"""
+
+
 import tkinter as tk
 from os import path
 

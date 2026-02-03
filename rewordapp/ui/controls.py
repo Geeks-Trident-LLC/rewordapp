@@ -1,3 +1,11 @@
+"""
+rewordapp.ui.controls
+---------------------
+
+UI controls and reusable widget components for RewordApp CE.
+
+"""
+
 
 import rewordapp.ui as ui
 import re
