@@ -22,8 +22,6 @@ from tkinter import messagebox
 import rewordapp.ui as ui
 import rewordapp.config as config
 
-app_data = config.Data()
-
 
 def get_center_coordinates(
         parent: tk.Tk, child_width: int, child_height: int
@@ -263,8 +261,8 @@ def open_app_resource(resource: str) -> None:
         The resource key to open. Supported values: "license", "documentation".
     """
     resources = {
-        "license": app_data.license_url,
-        "documentation": app_data.documentation_url,
+        "license": config.license_url,
+        "documentation": config.documentation_url,
     }
     url = resources.get(resource)
     if url:

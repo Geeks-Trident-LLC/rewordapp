@@ -15,8 +15,6 @@ import rewordapp.ui.helper as ui_helper
 
 import rewordapp.config as config
 
-app_data = config.Data()
-
 
 def create_window(
     parent: Union[ui.Tk, ui.Toplevel],
@@ -52,7 +50,7 @@ def add_main_panel(parent: ui.PanedWindow, width: int = 450, height: int = 20) -
     parent.add(frame, weight=4)
 
     ui_helper.create_styled_label(
-        frame, text=app_data.main_app_text + " " * 30,
+        frame, text=config.main_app_text + " " * 30,
         options=dict(foreground="navy", background="lightgray"),
         increased_size=8, bold=True, italic=True,
         layout=("grid", dict(row=0, column=0, columnspan=2, sticky="nwe"))
@@ -75,7 +73,7 @@ def add_repository_link(
         layout=("pack", dict(side=tk.LEFT))
     )
     ui_helper.create_styled_label(
-        cell_frame, text=app_data.repo_url, link=app_data.repo_url,
+        cell_frame, text=config.repo_url, link=config.repo_url,
         layout=("pack", dict(side=tk.LEFT))
     )
 
@@ -88,7 +86,7 @@ def add_dependency_panel(parent: Any) -> None:
     )
 
     row, column = 3, 0
-    for pkg_name, pkg in app_data.get_dependency().items():
+    for pkg_name, pkg in config.get_dependency().items():
         ui_helper.create_styled_label(
             parent,
             text=pkg.get("package", pkg_name),
@@ -109,7 +107,7 @@ def add_license_panel(
     """Create a scrollable license panel and add it to the given container."""
 
     label_frame = ui.LabelFrame(
-        parent, height=height, width=width, text=app_data.license_name
+        parent, height=height, width=width, text=config.license_name
     )
     parent.add(label_frame, weight=7)
 
@@ -124,7 +122,7 @@ def add_license_panel(
     scrollbar.grid(row=0, column=1, sticky="nsew")
 
     text_area.config(yscrollcommand=scrollbar.set)
-    text_area.insert(tk.INSERT, app_data.license)
+    text_area.insert(tk.INSERT, config.license)
 
     text_area.config(state="disabled")
 
@@ -139,12 +137,12 @@ def create_footer(
     parent.add(frame, weight=1)
 
     ui_helper.create_styled_label(
-        frame, text=app_data.copyright_text,
+        frame, text=config.copyright_text,
         layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 
     ui_helper.create_styled_label(
-        frame, text=app_data.company, link=app_data.company_url,
+        frame, text=config.company, link=config.company_url,
         layout=("pack", dict(side=tk.LEFT, pady=(10, 10))),
     )
 

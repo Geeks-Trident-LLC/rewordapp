@@ -16,8 +16,6 @@ from rewordapp import version
 import rewordapp.config as config
 from rewordapp.deps import genericlib_shell_module as shell
 
-app_data = config.Data()
-
 
 # Package info for regexapp
 pkg_info = shell.PackageInfo("rewordapp")
@@ -41,7 +39,7 @@ class TestData:
 
     def test_main_app_text(self):
         """Check main app text."""
-        assert f"v{version}" in app_data.main_app_text
+        assert f"v{version}" in config.main_app_text
 
     @pytest.mark.parametrize(
         "attr",
@@ -53,7 +51,7 @@ class TestData:
     def test_package_texts(self, attr):
         """Check package text strings."""
         expected = f"{attr} v"
-        assert getattr(app_data, f"{attr}_text").lower().startswith(expected)
+        assert getattr(config, f"{attr}_text").lower().startswith(expected)
 
     @pytest.mark.parametrize(
         "attr",
@@ -65,24 +63,24 @@ class TestData:
     def test_package_links(self, attr):
         """Check package links."""
         expected = f"https://pypi.org/project/{attr}"
-        assert getattr(app_data, f"{attr}_link").rstrip("/").lower() == expected
+        assert getattr(config, f"{attr}_link").rstrip("/").lower() == expected
 
     def test_company_info(self):
         """Check company info."""
-        assert app_data.company == "Geeks Trident LLC"
-        assert "geekstrident.com" in app_data.company_url
+        assert config.company == "Geeks Trident LLC"
+        assert "geekstrident.com" in config.company_url
 
     def test_repo_and_docs_urls(self):
         """Check repo and docs URLs."""
-        assert app_data.repo_url.startswith("https://github.com/")
-        assert app_data.documentation_url.endswith("README.md")
-        assert app_data.license_url.endswith("LICENSE")
+        assert config.repo_url.startswith("https://github.com/")
+        assert config.documentation_url.endswith("README.md")
+        assert config.license_url.endswith("LICENSE")
 
     def test_license_info(self):
         """Check license info."""
-        assert "RewordApp License" in app_data.license_name
-        assert "2021-2040" in app_data.copyright_text
-        assert isinstance(app_data.license, str)
+        assert "RewordApp License" in config.license_name
+        assert "2021-2040" in config.copyright_text
+        assert isinstance(config.license, str)
 
     @pytest.mark.parametrize(
         "pkg",
@@ -93,6 +91,6 @@ class TestData:
     )
     def test_get_dependency(self, pkg):
         """Check dependency dict."""
-        pkg_name, pkg_url = app_data.get_dependency().get(pkg).values()
+        pkg_name, pkg_url = config.get_dependency().get(pkg).values()
         assert pkg_name.startswith(f"{pkg} v")
         assert pkg_url.rstrip("/").lower() == f"https://pypi.org/project/{pkg}"
