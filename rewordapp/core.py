@@ -1,25 +1,40 @@
-# from typing import Any
-# from rewordapp.deps import genericlib_Line as Line
-#
-#
-# class RewordBuilder:
-#     def __init__(self, txt: str):
-#         self.txt = str(txt)
-#
-#         self.lines = (line for line in self.txt.splitlines(keepends=True))
-#
-#     @property
-#     def raw_data(self):
-#         return self.txt
-#
-#     def transform_line(self, line):
-#         for token in line.do_finditer_split():
-#             pass
-#
-#     def build(self):
-#         result = []
-#         for line in self.lines:
-#             if line.is_optional_empty:
-#                 result.append(line)
-#             else:
-#                 pass
+"""
+rewordapp.core
+==============
+
+Core logic and shared utilities for RewordApp CE.
+
+"""
+
+
+from rewordapp.line import Line
+
+
+class RewordBuilder:
+    """Builds rewritten text by transforming each line according to a rule."""
+
+    def __init__(self, text: str, rule: str = "") -> None:
+        self._text = str(text)
+        self._rule = rule
+
+        # Store as list so lines can be iterated multiple times
+        self._lines = [Line(line) for line in self._text.splitlines(keepends=True)]
+
+    @property
+    def raw_text(self) -> str:
+        """Return the original unmodified text."""
+        return self._text
+
+    @property
+    def rewritten_text(self) -> str:
+        """Return the transformed text after applying rewrite rules."""
+        self.apply_transform()
+        parts = []
+        for line in self._lines:
+            parts.append(line.content)
+            parts.append(line.newline)
+        return "".join(parts)
+
+    def apply_transform(self) -> None:
+        """Apply rewrite rules to each line (override in subclasses)."""
+        pass
