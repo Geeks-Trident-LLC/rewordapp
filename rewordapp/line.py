@@ -9,18 +9,16 @@ Utilities for splitting a text line into content and newline parts.
 import re
 
 from rewordapp.token import build_token
-from rewordapp.token import add_token_if_new
 
 
 class Line:
     """Represents a single text line split into content and its trailing newline."""
 
-    def __init__(self, text: str, rules=None, extras=None) -> None:
+    def __init__(self, text: str, rules=None) -> None:
         self._raw = text
         self._content = text.rstrip("\r\n")
         self._newline = text[len(self._content):]
         self.rules = rules if isinstance(rules, dict) else {}
-        self.extras = extras if isinstance(extras, list) else []
 
     @property
     def raw(self) -> str:
@@ -54,16 +52,12 @@ class Line:
             # Text before the whitespace
             segment = self._content[cursor:start]
             if segment:
-                token = build_token(segment, rules=self.rules,
-                                    extras=self.extras)
+                token = build_token(segment, rules=self.rules)
                 tokens.append(token)
-                add_token_if_new(token, self.extras)
 
             # The whitespace itself
-            ws_token = build_token(match.group(), rules=self.rules,
-                                   extras=self.extras)
+            ws_token = build_token(match.group(), rules=self.rules)
             tokens.append(ws_token)
-            add_token_if_new(ws_token, self.extras)
 
             cursor = end
             last_match_end = end
@@ -75,9 +69,7 @@ class Line:
             else self._content
         )
         if remaining:
-            final_token = build_token(remaining, rules=self.rules,
-                                      extras=self.extras)
+            final_token = build_token(remaining, rules=self.rules)
             tokens.append(final_token)
-            add_token_if_new(final_token, self.extras)
 
         return tokens

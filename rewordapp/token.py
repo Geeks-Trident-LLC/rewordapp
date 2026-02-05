@@ -7,10 +7,9 @@ from rewordapp.netparser import IPv4Parser, IPv6Parser, MACParser
 class BaseToken:
     """Base class for text units that may match a specific token type."""
 
-    def __init__(self, text: str, rules=None, extras=None) -> None:
+    def __init__(self, text: str, rules=None) -> None:
         self._text = text
         self.rules = rules if isinstance(rules, dict) else {}
-        self.extras = extras if isinstance(extras, list) else []
 
         self._masked = ""
         self._rewritten = ""
@@ -131,11 +130,7 @@ class MACToken(BaseToken):
             self.parsed_node = mac
 
 
-def build_token(
-    text: str,
-    rules: dict | None = None,
-    extras: list | None = None,
-):
+def build_token(text: str,rules: dict | None = None):
     """Return the first token type that matches the given text."""
     token_types = [
         MACToken,
@@ -146,22 +141,8 @@ def build_token(
 
     if text:
         for token_cls in token_types:
-            token = token_cls(text, rules=rules, extras=extras)
+            token = token_cls(text, rules=rules)
             if token:
                 return token
 
-    return FallbackToken(text, rules=rules, extras=extras)
-
-
-def add_token_if_new(token, collection):
-    """Append the token to the collection if it is not a fallback and not already present."""
-    if isinstance(token, FallbackToken):
-        return
-
-    if not collection:
-        collection.append(token)
-        return
-
-    exists = any(item == token for item in collection)
-    if not exists:
-        collection.append(token)
+    return FallbackToken(text, rules=rules)
