@@ -6,14 +6,21 @@ Utilities for splitting a text line into content and newline parts.
 
 """
 
+import re
+
+from rewordapp.token import build_token
+from rewordapp.token import add_token_if_new
+
 
 class Line:
     """Represents a single text line split into content and its trailing newline."""
 
-    def __init__(self, text: str) -> None:
+    def __init__(self, text: str, rules=None, extras=None) -> None:
         self._raw = text
         self._content = text.rstrip("\r\n")
         self._newline = text[len(self._content):]
+        self.rules = rules if isinstance(rules, dict) else {}
+        self.extras = extras if isinstance(extras, list) else []
 
     @property
     def raw(self) -> str:
@@ -35,3 +42,42 @@ class Line:
         """Return the rewritten line content (defaults to original content)."""
         return self._content
 
+    def tokenize(self):
+        """Split content into tokens and update the token registry."""
+        tokens = []
+        cursor = 0
+        last_match_end = 0
+
+        for match in re.finditer(r"\s+", self._content):
+            start, end = match.start(), match.end()
+
+            # Text before the whitespace
+            segment = self._content[cursor:start]
+            if segment:
+                token = build_token(segment, rules=self.rules,
+                                    extras=self.extras)
+                tokens.append(token)
+                add_token_if_new(token, self.extras)
+
+            # The whitespace itself
+            ws_token = build_token(match.group(), rules=self.rules,
+                                   extras=self.extras)
+            tokens.append(ws_token)
+            add_token_if_new(ws_token, self.extras)
+
+            cursor = end
+            last_match_end = end
+
+        # Remaining text after the last match
+        remaining = (
+            self._content[last_match_end:]
+            if last_match_end > 0
+            else self._content
+        )
+        if remaining:
+            final_token = build_token(remaining, rules=self.rules,
+                                      extras=self.extras)
+            tokens.append(final_token)
+            add_token_if_new(final_token, self.extras)
+
+        return tokens
