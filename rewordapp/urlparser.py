@@ -8,7 +8,7 @@ mapped or obfuscated URL variants.
 
 import re
 
-from rewordapp.charsmapping import rewrite_text
+from rewordapp.charsmapping import rewrite_url
 from rewordapp.deps import genericlib_DotObject as DotObject
 
 
@@ -105,11 +105,11 @@ class URLParser:
         """Generate a rewritten URL using mapped components and return a new parser."""
         scheme = self.info.scheme
 
-        new_user = rewrite_text(self.info.user, url_user=True)
-        new_host = rewrite_text(self.info.host, url_host=True)
-        new_path = rewrite_text(self.info.path, url_path=True)
-        new_query = rewrite_text(self.info.query, url_query=True)
-        new_fragment = rewrite_text(self.info.fragment, url_fragment=True)
+        new_user = rewrite_url(user=self.info.user)
+        new_host = rewrite_url(host=self.info.host)
+        new_path = rewrite_url(path=self.info.path)
+        new_query = rewrite_url(query=self.info.query)
+        new_fragment = rewrite_url(fragment=self.info.fragment)
 
         rewritten = (
             f"{self.prefix}"
