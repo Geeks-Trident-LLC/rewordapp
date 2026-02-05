@@ -8,7 +8,7 @@ mapped or obfuscated URL variants.
 
 import re
 
-from rewordapp.charsmapping import rewrite_url
+from rewordapp.rewritten import rewrite_url
 from rewordapp.deps import genericlib_DotObject as DotObject
 
 

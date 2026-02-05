@@ -1,6 +1,6 @@
 """
-rewordapp.charsmapping
-======================
+rewordapp.rewritten
+===================
 
 Utilities for generating randomized character‑substitution maps used for
 rewriting or obfuscating text components such as letters, digits, and URL parts.
