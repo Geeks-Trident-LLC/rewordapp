@@ -9,6 +9,7 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 
 import string
 import random
+import re
 
 
 def build_char_map(*charsets):
@@ -38,7 +39,7 @@ class CharMapping:
     digits = build_char_map(string.digits)
     base_number = build_char_map(string.digits)
     fraction_number = build_char_map(string.digits)
-    alphanum = build_char_map(*letters_set, string.digits)
+    alphanumeric = build_char_map(*letters_set, string.digits)
 
     # URL‑specific mappings
     url_user = build_char_map(*letters_set, string.digits)
@@ -56,7 +57,7 @@ class CharMapping:
         cls.digits = build_char_map(string.digits)
         cls.base_number = build_char_map(string.digits)
         cls.fraction_number = build_char_map(string.digits)
-        cls.alphanum = build_char_map(*letters_set, string.digits)
+        cls.alphanumeric = build_char_map(*letters_set, string.digits)
 
         # URL‑specific mappings
         cls.url_user = build_char_map(*letters_set, string.digits)
@@ -70,31 +71,26 @@ def apply_mapping(source: str, mapping: dict) -> str:
     return "".join(mapping.get(ch, ch) for ch in source)
 
 def rewrite_text(
-        txt: str,
-        *,
-        letters=False,
-        alphanumeric=False,
-        number=False,
+    text: str,
+    *,
+    letters: bool = False,
+    alphanumeric: bool = False,
 ):
-    """Return a rewritten version of the text using the selected character mapping."""
-
-    if not txt.strip():
-        return txt
+    """Rewrite text using letter or alphanumeric character mappings."""
+    if not text.strip():
+        return text
 
     if letters:
-        return apply_mapping(txt, CharMapping.letters)
-    if number:
-        # Preserve fractional structure if present
-        if "." in txt:
-            base, fraction = txt.rsplit(".", maxsplit=1)
-            new_base = apply_mapping(base, CharMapping.base_number)
-            new_fraction = apply_mapping(base, CharMapping.fraction_number)
-            return f"{new_base}.{new_fraction}"
-        return apply_mapping(txt, CharMapping.base_number)
-    if alphanumeric:
-        return apply_mapping(txt, CharMapping.alphanum)
+        return apply_mapping(text, CharMapping.letters)
 
-    return txt
+    if alphanumeric:
+        rewritten = apply_mapping(text, CharMapping.alphanumeric)
+        # Prevent leading zero in multi‑character results
+        if re.match(r"0[A-Za-z0-9]", rewritten):
+            return f"{CharMapping.first_digit}{rewritten[1:]}"
+        return rewritten
+
+    return text
 
 
 def rewritten_url(user="", host="", path="", query="", fragment=""):
@@ -131,6 +127,38 @@ def rewrite_digits(text: str) -> str:
 
     # Avoid leading zero in multi‑digit results
     if len(rewritten) > 1 and rewritten[0] == "0":
+        return f"{CharMapping.first_digit}{rewritten[1:]}"
+
+    return rewritten
+
+
+def rewrite_number(text: str) -> str:
+    """Rewrite a numeric string using number mappings while preserving structure."""
+    # Fractional number
+    if "." in text:
+        try:
+            value = float(text)
+        except ValueError:
+            return text
+
+        if value == 0:
+            return text
+
+        base, fraction = text.rsplit(".", maxsplit=1)
+        new_base = apply_mapping(base, CharMapping.base_number)
+        new_fraction = apply_mapping(fraction, CharMapping.fraction_number)
+        rewritten = f"{new_base}.{new_fraction}"
+
+        # Avoid leading zero in multi‑digit results
+        if re.match(r"0[0-9]", rewritten):
+            return f"{CharMapping.first_digit}{rewritten[1:]}"
+
+        return rewritten
+
+    # Integer number
+    rewritten = apply_mapping(text, CharMapping.base_number)
+
+    if re.match(r"0[0-9]", rewritten):
         return f"{CharMapping.first_digit}{rewritten[1:]}"
 
     return rewritten
