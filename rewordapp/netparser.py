@@ -5,6 +5,7 @@ import re
 import ipaddress
 from copy import deepcopy
 
+import rewordapp.rewritten as rewritten
 from rewordapp.deps import genericlib_DotObject as DotObject
 
 
@@ -271,7 +272,7 @@ class NetworkParser:
 
     def __init__(self, text: str):
         self._text = text
-        self.network_info = DotObject(
+        self.info = DotObject(
             network="",
             address="",
             full_address="",
@@ -287,11 +288,11 @@ class NetworkParser:
 
     def __len__(self) -> int:
         """Return 1 if a network was parsed, else 0."""
-        return 1 if self.network_info.network else 0
+        return 1 if self.info.network else 0
 
     def __bool__(self) -> bool:
         """Return True if a network was parsed, else False."""
-        return bool(self.network_info.network)
+        return bool(self.info.network)
 
     # --- Properties ---
     @property
@@ -308,19 +309,19 @@ class NetworkParser:
 
     @property
     def network(self) -> str:
-        return self.network_info.network or ""
+        return self.info.network or ""
 
     @property
     def address(self) -> str:
-        return self.network_info.address or ""
+        return self.info.address or ""
 
     @property
     def full_address(self) -> str:
-        return self.network_info.full_address or ""
+        return self.info.full_address or ""
 
     @property
     def subnet(self) -> str:
-        return self.network_info.subnet or ""
+        return self.info.subnet or ""
 
     @property
     def subnet_joiner(self) -> str:
@@ -330,15 +331,15 @@ class NetworkParser:
 
     @property
     def version(self) -> int:
-        return self.network_info.version
+        return self.info.version
 
     @property
     def value(self):
-        return self.network_info.value or 0
+        return self.info.value or 0
 
     @property
     def octets(self) -> Octets:
-        return self.network_info.octets
+        return self.info.octets
 
     # --- Internal helpers ---
     def _match_regex(self, pattern: str) -> tuple[bool, dict]:
@@ -347,21 +348,21 @@ class NetworkParser:
         return (True, match.groupdict()) if match else (False, {})
 
     def _apply_parsed_fields(self, parsed: dict) -> None:
-        """Update network_info fields from regex results."""
-        self.network_info.network = parsed.get("network", "")
-        self.network_info.address = parsed.get("address", "")
-        if self.network_info.address:
-            addr = ipaddress.ip_address(self.network_info.address)
-            self.network_info.update(full_address=addr.exploded)
-            self.network_info.update(version=addr.version)
-            self.network_info.update(value=int(addr))
-            self.network_info.update(
+        """Update info fields from regex results."""
+        self.info.network = parsed.get("network", "")
+        self.info.address = parsed.get("address", "")
+        if self.info.address:
+            addr = ipaddress.ip_address(self.info.address)
+            self.info.update(full_address=addr.exploded)
+            self.info.update(version=addr.version)
+            self.info.update(value=int(addr))
+            self.info.update(
                 octets=Octets(
                     address=addr.exploded,
                     net_type="ipv4" if addr.version == 4 else "ipv6"
                 )
             )
-        self.network_info.subnet = parsed.get("subnet", "")
+        self.info.subnet = parsed.get("subnet", "")
         self._prefix = parsed.get("prefix", "")
         self._suffix = parsed.get("suffix", "")
 
@@ -416,7 +417,7 @@ class NetworkParser:
 
     def sync_octets(self, other):
         if type(self) == type(other) and len(self.octets) == len(other.octets):
-            octets = self.network_info.octets.octets
+            octets = self.info.octets.octets
             for index, octet in enumerate(octets):
                 other_octet = other.octets.get_octet(index)
                 if octet != other_octet:
@@ -536,12 +537,10 @@ class MACParser:
         self._text = text
         self._prefix = ""
         self._suffix = ""
-        self.new_parser = None
 
-        self.network_info = DotObject(
+        self.info = DotObject(
             address="",
-            value=0,
-            octets=Octets(address="", net_type="mac"),
+            value=0
         )
 
         self._parse_mac()
@@ -552,11 +551,11 @@ class MACParser:
 
     def __len__(self) -> int:
         """Return 1 if a MAC address was parsed, else 0."""
-        return 1 if self.network_info.address else 0
+        return 1 if self.info.address else 0
 
     def __bool__(self) -> bool:
         """Return True if a MAC address was parsed."""
-        return bool(self.network_info.address)
+        return bool(self.info.address)
 
     # ------------------------------------------------------------
     # Properties
@@ -576,28 +575,23 @@ class MACParser:
 
     @property
     def address(self) -> str:
-        return self.network_info.address
+        return self.info.address
 
     @property
     def value(self) -> int:
-        return self.network_info.value
-
-    @property
-    def octets(self) -> Octets:
-        return self.network_info.octets
+        return self.info.value
 
     # ------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------
 
     def _apply_parsed_fields(self, parsed: dict) -> None:
-        """Populate network_info and prefix/suffix from regex results."""
+        """Populate info and prefix/suffix from regex results."""
         addr = parsed.get("address", "")
         if addr:
-            cleaned = re.sub(r"[.:-]", "", addr)
-            self.network_info.address = addr
-            self.network_info.value = int(cleaned, 16)
-            self.network_info.octets = Octets(address=addr, net_type="mac")
+            cleaned = re.sub(r"[.: -]", "", addr)
+            self.info.address = addr
+            self.info.value = int(cleaned, 16)
 
         self._prefix = parsed.get("prefix", "") or ""
         self._suffix = parsed.get("suffix", "") or ""
@@ -626,54 +620,12 @@ class MACParser:
 
         self._apply_parsed_fields(match.groupdict())
 
-    # ------------------------------------------------------------
-    # Sync & generation
-    # ------------------------------------------------------------
-
-    def sync_octets(self, other) -> None:
-        """Sync octets with another parser of the same type."""
-        if type(self) == type(other) and len(self.octets) == len(other.octets):
-            octets = self.network_info.octets.octets
-            for index, octet in enumerate(octets):
-                other_octet = other.octets.get_octet(index)
-                if octet != other_octet:
-                    octets[index] = other_octet.clone()
-
-    def generate_new(self, source_parsers=None):
-        """Generate a new MAC-like address based on source patterns."""
+    def generate_new(self):
         # Broadcast or zero MAC → return unchanged
-        if self.value in (0, int("f" * 12, 16)):
-            self.new_parser = MACParser(self.address)
-            return self.new_parser
+        if self:
+            if self.value in (0, int("f" * 12, 16)):
+                return self.__class__(self.raw_text)
 
-        source_parsers = (
-            source_parsers if isinstance(source_parsers, (list, tuple)) else []
-        )
-
-        # Generate new base address
-        new_address = self.octets.generate_new().to_address()
-        self.new_parser = MACParser(new_address)
-
-        # Sync with identical source if present
-        identical_sources = [src for src in source_parsers if src.value == self.value]
-        if identical_sources:
-            self.new_parser.sync_octets(identical_sources[0].new_parser)
-            return self.new_parser
-
-        # Determine sync range
-        start, stop = (3, 6) if len(self.octets) == 6 else (2, 4)
-
-        # Sync matching octets by position
-        for idx in range(start, stop):
-            current = self.octets.get_octet(idx)
-            matches = [
-                src for src in source_parsers
-                if src.octets.contains_octet(current)
-            ]
-            if matches:
-                self.new_parser.octets.sync_by_position(
-                    matches[0].new_parser.octets,
-                    current.position
-                )
-
-        return self.new_parser
+            new_mac_addr = rewritten.new_mac_address(self.address)
+            return self.__class__(f"{self.prefix}{new_mac_addr}{self.suffix}")
+        return self.__class__(self.raw_text)
