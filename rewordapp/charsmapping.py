@@ -74,7 +74,6 @@ def rewrite_text(
         *,
         letters=False,
         alphanumeric=False,
-        digits=False,
         number=False,
 ):
     """Return a rewritten version of the text using the selected character mapping."""
@@ -84,8 +83,6 @@ def rewrite_text(
 
     if letters:
         return apply_mapping(txt, CharMapping.letters)
-    if digits:
-        return apply_mapping(txt, CharMapping.digits)
     if number:
         # Preserve fractional structure if present
         if "." in txt:
@@ -119,3 +116,21 @@ def rewritten_url(user="", host="", path="", query="", fragment=""):
     elif fragment:
         return apply_mapping(fragment, CharMapping.url_fragment)
     return ""
+
+
+def rewrite_digits(text: str) -> str:
+    """Rewrite a digit‑only string using digit mappings while preserving leading rules."""
+    if not text.isdigit():
+        return text
+
+    # Zero stays unchanged
+    if int(text) == 0:
+        return text
+
+    rewritten = apply_mapping(text, CharMapping.digits)
+
+    # Avoid leading zero in multi‑digit results
+    if len(rewritten) > 1 and rewritten[0] == "0":
+        return f"{CharMapping.first_digit}{rewritten[1:]}"
+
+    return rewritten
