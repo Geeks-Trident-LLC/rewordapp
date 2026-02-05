@@ -48,6 +48,16 @@ class CharMapping:
     url_query = build_char_map(*letters_set, string.digits)
     url_fragment = build_char_map(*letters_set, string.digits)
 
+    # MAC address mapping
+    mac = (
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+    )
+
     @classmethod
     def refresh(cls):
         cls.first_digit = random.choice("123456789")
@@ -66,11 +76,20 @@ class CharMapping:
         cls.url_query = build_char_map(*letters_set, string.digits)
         cls.url_fragment = build_char_map(*letters_set, string.digits)
 
+        cls.mac = (
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        )
+
 
 def apply_mapping(source: str, mapping: dict) -> str:
     return "".join(mapping.get(ch, ch) for ch in source)
 
-def rewrite_text(
+def new_text(
     text: str,
     *,
     letters: bool = False,
@@ -93,7 +112,7 @@ def rewrite_text(
     return text
 
 
-def rewritten_url(user="", host="", path="", query="", fragment=""):
+def new_url(user="", host="", path="", query="", fragment=""):
     """Rewrite a single URL component using the appropriate character mapping."""
 
     if user:
@@ -114,7 +133,7 @@ def rewritten_url(user="", host="", path="", query="", fragment=""):
     return ""
 
 
-def rewrite_digits(text: str) -> str:
+def new_digits(text: str) -> str:
     """Rewrite a digit‑only string using digit mappings while preserving leading rules."""
     if not text.isdigit():
         return text
@@ -132,7 +151,7 @@ def rewrite_digits(text: str) -> str:
     return rewritten
 
 
-def rewrite_number(text: str) -> str:
+def new_number(text: str) -> str:
     """Rewrite a numeric string using number mappings while preserving structure."""
     # Fractional number
     if "." in text:
@@ -162,3 +181,34 @@ def rewrite_number(text: str) -> str:
         return f"{CharMapping.first_digit}{rewritten[1:]}"
 
     return rewritten
+
+
+def new_mac_address(address: str) -> str:
+    """Rewrite the second half of a MAC address using mapped octets."""
+    stripped = address.strip()
+
+    # Detect separator (., :, space, or -)
+    match = re.search(r"[.: -]", stripped)
+    sep = match.group() if match else ""
+
+    # Remove all separators
+    compact = re.sub(r"[.: -]", "", stripped)
+
+    # Determine octet size: 2 chars normally, 3 chars for dotted format
+    octet_size = 3 if sep == "." else 2
+    octets = re.findall(f".{{{octet_size}}}", compact)
+
+    count = len(octets)
+    if count not in (4, 6):
+        return address
+
+    # Rewrite only the second half
+    midpoint = count // 2
+    rewritten = octets[:midpoint]
+
+    for idx, octet in enumerate(octets[midpoint:]):
+        mapped = apply_mapping(octet, CharMapping.mac[idx])
+        rewritten.append(mapped)
+
+    return sep.join(rewritten)
+
