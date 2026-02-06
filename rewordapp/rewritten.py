@@ -10,6 +10,7 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 import string
 import random
 import re
+import ipaddress
 
 
 def build_char_map(*charsets):
@@ -25,13 +26,28 @@ def build_char_map(*charsets):
     return mapping
 
 
-# Base character groups
-letters_set = (string.ascii_lowercase, string.ascii_uppercase)
+def build_ipv4_octet_map() -> dict[str, str]:
+    """Build a shuffled mapping for IPv4 octet values from 0–255."""
+    mapping = {"0": "0"}  # zero stays fixed
+
+    start = 1
+    ranges = [10, 100, 200, 256]
+
+    for stop in ranges:
+        original = [str(n) for n in range(start, stop)]
+        shuffled = original.copy()
+        random.shuffle(shuffled)
+        mapping.update(zip(original, shuffled))
+        start = stop
+
+    return mapping
 
 
 class CharMapping:
     """Container for randomized character‑substitution maps used for rewriting text."""
 
+    # Base character groups
+    letters_set = (string.ascii_lowercase, string.ascii_uppercase)
     first_digit = random.choice("123456789")
 
     # General mappings
@@ -58,25 +74,63 @@ class CharMapping:
         build_char_map("abcdef", "ABCDEF", "0", "123456789"),
     )
 
+    # IPv4 address mapping
+    ipv4 = (
+        build_ipv4_octet_map(),
+        build_ipv4_octet_map(),
+        build_ipv4_octet_map(),
+        build_ipv4_octet_map()
+    )
+
+    # IPv6 address mapping
+    ipv6 = (
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+    )
+
     @classmethod
     def refresh(cls):
         cls.first_digit = random.choice("123456789")
 
         """Regenerate all character‑mapping tables."""
-        cls.letters = build_char_map(*letters_set)
+        cls.letters = build_char_map(*cls.letters_set)
         cls.digits = build_char_map(string.digits)
         cls.base_number = build_char_map(string.digits)
         cls.fraction_number = build_char_map(string.digits)
-        cls.alphanumeric = build_char_map(*letters_set, string.digits)
+        cls.alphanumeric = build_char_map(*cls.letters_set, string.digits)
 
         # URL‑specific mappings
-        cls.url_user = build_char_map(*letters_set, string.digits)
-        cls.url_host = build_char_map(*letters_set, string.digits)
-        cls.url_path = build_char_map(*letters_set, string.digits)
-        cls.url_query = build_char_map(*letters_set, string.digits)
-        cls.url_fragment = build_char_map(*letters_set, string.digits)
+        cls.url_user = build_char_map(*cls.letters_set, string.digits)
+        cls.url_host = build_char_map(*cls.letters_set, string.digits)
+        cls.url_path = build_char_map(*cls.letters_set, string.digits)
+        cls.url_query = build_char_map(*cls.letters_set, string.digits)
+        cls.url_fragment = build_char_map(*cls.letters_set, string.digits)
 
         cls.mac = (
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        )
+
+        cls.ipv4 = (
+            build_ipv4_octet_map(),
+            build_ipv4_octet_map(),
+            build_ipv4_octet_map(),
+            build_ipv4_octet_map()
+        )
+
+        cls.ipv6 = (
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
             build_char_map("abcdef", "ABCDEF", "0", "123456789"),
             build_char_map("abcdef", "ABCDEF", "0", "123456789"),
             build_char_map("abcdef", "ABCDEF", "0", "123456789"),
@@ -212,3 +266,47 @@ def new_mac_address(address: str) -> str:
 
     return sep.join(rewritten)
 
+
+def new_ipv4_address(address: str) -> str:
+    """Rewrite an IPv4 address by remapping octets 2–4 using predefined mappings."""
+    octets = address.strip().split(".")
+    if len(octets) != 4:
+        return address
+
+    new_octets = []
+    for idx, octet in enumerate(octets):
+        new_octet = octet if idx == 0 else CharMapping.ipv4[idx].get(octet, octet)
+        new_octets.append(new_octet)
+    return ".".join(new_octets)
+
+
+def new_ipv6_address(address: str) -> str:
+    """Rewrite an IPv6 address by remapping groups after the first non‑zero group."""
+    stripped = address.strip()
+
+    # Preserve original casing style (uppercase hex vs lowercase)
+    is_uppercase = re.sub(r"[0-9:]+", "", stripped).isupper()
+
+    # Normalize to full 8‑group exploded form
+    full = ipaddress.ip_address(stripped).exploded
+
+    # Unspecified address stays unchanged
+    if full == "0000:" * 7 + "0000":
+        return address
+
+    groups = full.split(":")
+    rewritten = []
+    rewrite_started = False
+
+    for index, group in enumerate(groups):
+        if rewrite_started:
+            mapped = apply_mapping(group, CharMapping.ipv6[index])
+            rewritten.append(mapped)
+        else:
+            rewritten.append(group)
+            # Begin rewriting after the first non‑zero group
+            if group.strip("0"):
+                rewrite_started = True
+
+    compressed = ipaddress.ip_address(":".join(rewritten)).compressed
+    return compressed.upper() if is_uppercase else compressed

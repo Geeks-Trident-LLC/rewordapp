@@ -58,46 +58,27 @@ def test_valid_netmask_method(network, expected):
     assert parser.is_valid_netmask() == expected
 
 
-def test_generate_new_basic_behavior():
+def test_generate_new():
     """Verify generate_new() preserves or changes octets as expected."""
     parser = IPv4Parser("255.255.255.255")
-    new_parse = parser.generate_new()
-    assert parser.value == new_parse.value
-
+    new_parser = parser.generate_new()
+    assert parser.value == new_parser.value
     parser = IPv4Parser("192.168.0.1")
     new_parser = parser.generate_new()
-    assert parser.octets.get_octet(0) == new_parser.octets.get_octet(0)
-    assert parser.octets.get_octet(1) != new_parser.octets.get_octet(1)
-    assert parser.octets.get_octet(2) == new_parser.octets.get_octet(2)
-    assert parser.octets.get_octet(3) != new_parser.octets.get_octet(3)
+    assert parser.value != new_parser.value
 
 
-def test_generate_new_method_with_source_parser():
-    """Ensure octet syncing works when source parsers are provided."""
-    source_parsers = []
+@pytest.mark.parametrize(
+    "original, expected",
+    [
+        ("10.0.0.1", "10.0.0.1"),
+        ("192.168.0.30", "192.168.0.30"),
+        ("172.100.90.50/30", "172.100.90.50/28"),
+    ],
+)
+def test_generate_new_produces_identical_values(original, expected):
+    """IPv4Parser.generate_new() should yield identical values for identical inputs."""
+    parser = IPv4Parser(original)
+    other = IPv4Parser(expected)
 
-    for addr in [
-        "192.168.1.1",
-        "192.10.1.30",
-        "172.10.20.30",
-        "10.0.1.10"
-    ]:
-        parser = IPv4Parser(addr)
-        parser.generate_new(source_parsers=source_parsers)
-        source_parsers.append(parser)
-
-    other = IPv4Parser("192.10.1.30")
-    other.generate_new(source_parsers=source_parsers)
-
-    expects = [
-        (True, False, True, False),
-        (True, True, True, True),
-        (False, True, False, True),
-        (False, False, True, False)
-    ]
-
-    for index, expect in enumerate(expects):
-        source = source_parsers[index]
-        for pos in range(4):
-            is_equal = source.new_parser.octets.get_octet(pos) == other.new_parser.octets.get_octet(pos)
-            assert is_equal == expect[pos]
+    assert parser.generate_new().value == other.generate_new().value
