@@ -218,8 +218,14 @@ def new_number(text: str) -> str:
             return text
 
         base, fraction = text.rsplit(".", maxsplit=1)
-        new_base = apply_mapping(base, CharMapping.base_number)
-        new_fraction = apply_mapping(fraction, CharMapping.fraction_number)
+
+        # Preserve literal zeros instead of mapping them
+        new_base = base if (base.isdigit() and int(base) == 0) \
+            else apply_mapping(base, CharMapping.base_number)
+
+        new_fraction = fraction if (fraction.isdigit() and int(fraction) == 0) \
+            else apply_mapping(fraction, CharMapping.fraction_number)
+
         rewritten = f"{new_base}.{new_fraction}"
 
         # Avoid leading zero in multi‑digit results
