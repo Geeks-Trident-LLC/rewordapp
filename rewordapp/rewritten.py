@@ -140,30 +140,44 @@ class CharMapping:
         )
 
 
-def apply_mapping(source: str, mapping: dict) -> str:
+def apply_mapping(source: str, mapping: dict[str, str]) -> str:
+    """Return a rewritten string by substituting characters using the given mapping."""
     return "".join(mapping.get(ch, ch) for ch in source)
 
-def new_text(
-    text: str,
-    *,
-    letters: bool = False,
-    alphanumeric: bool = False,
-):
-    """Rewrite text using letter or alphanumeric character mappings."""
+
+def new_word(text: str) -> str:
+    """Rewrite a word while preserving punctuation and applying the appropriate character mapping."""
     if not text.strip():
         return text
 
-    if letters:
-        return apply_mapping(text, CharMapping.letters)
+    # Choose mapping based on whether the segment is pure letters
+    def select_mapping(segment: str):
+        if re.fullmatch(r"[A-Za-z]", segment):
+            return CharMapping.letters
+        return CharMapping.alphanumeric
 
-    if alphanumeric:
-        rewritten = apply_mapping(text, CharMapping.alphanumeric)
-        # Prevent leading zero in multi‑character results
-        if re.match(r"0[A-Za-z0-9]", rewritten):
-            return f"{CharMapping.first_digit}{rewritten[1:]}"
-        return rewritten
+    punct_pattern = f"[{re.escape(string.punctuation)}]+"
 
-    return text
+    # If punctuation appears, rewrite only the non‑punctuation segments
+    if re.search(punct_pattern, text):
+        parts = []
+        start = 0
+        match = None
+
+        for match in re.finditer(punct_pattern, text):
+            before = text[start:match.start()]
+            parts.append(apply_mapping(before, select_mapping(before)))
+            parts.append(match.group())     # keep punctuation unchanged
+            start = match.end()
+
+        if match:
+            after = text[match.end():]
+            parts.append(apply_mapping(after, select_mapping(after)))
+
+        return "".join(parts)
+
+    # No punctuation → rewrite whole word
+    return apply_mapping(text, select_mapping(text))
 
 
 def new_url(user="", host="", path="", query="", fragment=""):

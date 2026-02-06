@@ -31,7 +31,7 @@ class URLParser:
             fragment="",
         )
 
-        self._parse_url()
+        self._parse()
 
     # ------------------------------------------------------------
     # Magic methods
@@ -79,7 +79,7 @@ class URLParser:
         self.info.query = parsed.get("query") or ""
         self.info.fragment = parsed.get("fragment") or ""
 
-    def _parse_url(self) -> None:
+    def _parse(self) -> None:
         """Parse MAC address from raw text."""
         pattern = r"""(?ix)
             (?P<url>

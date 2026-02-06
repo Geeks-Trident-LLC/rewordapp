@@ -54,7 +54,7 @@ class NetworkParser:
         )
         self._prefix = ""
         self._suffix = ""
-        self._parse_network()
+        self._parse()
 
     def __len__(self) -> int:
         """Return 1 if a network was parsed, else 0."""
@@ -154,7 +154,7 @@ class NetworkParser:
         self._apply_parsed_fields(result)
         return True
 
-    def _parse_network(self) -> None:
+    def _parse(self) -> None:
         """Try parsing as IPv6 first, then IPv4."""
         if not self._parse_ipv6():
             self._parse_ipv4()
@@ -203,7 +203,7 @@ class MACParser:
             value=0
         )
 
-        self._parse_mac()
+        self._parse()
 
     # ------------------------------------------------------------
     # Magic methods
@@ -256,7 +256,7 @@ class MACParser:
         self._prefix = parsed.get("prefix", "") or ""
         self._suffix = parsed.get("suffix", "") or ""
 
-    def _parse_mac(self) -> None:
+    def _parse(self) -> None:
         """Parse MAC address from raw text."""
         pattern = r"""
             (?ix)
