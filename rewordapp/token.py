@@ -54,6 +54,13 @@ class BaseToken:
     @property
     def rewritten(self) -> str:
         """Return the rewritten representation."""
+        if not self:
+            return ""
+
+        if isinstance(self.parsed_node, str):
+            return self.parsed_node
+
+        self._rewritten = self.parsed_node.generate_new().raw_text
         return self._rewritten
 
     # --- Processing pipeline -------------------------------------------------
@@ -171,15 +178,3 @@ def build_token(text: str, rules: dict | None = None):
 
     return FallbackToken(text, rules=rules)
 
-
-def rewrite_token_content(token):
-    """Return rewritten content for a token, applying generation rules when applicable."""
-    if not isinstance(token, BaseToken) or not token:
-        return ""
-
-    # Tokens that preserve their parsed content directly
-    if isinstance(token, (FallbackToken, WhitespaceToken)):
-        return token.parsed_node
-
-    # Tokens that support generating a new rewritten form
-    return token.parsed_node.generate_new().raw_text

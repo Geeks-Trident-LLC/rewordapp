@@ -6,6 +6,7 @@ number parsing and rewriting utilities.
 """
 
 import re
+import string
 
 import rewordapp.rewritten as rewritten
 
@@ -57,7 +58,10 @@ class NumberParser:
 
     def _parse(self) -> None:
         """Parse number from raw text."""
-        pattern = r"""(?ix)
+
+        punct_pattern = f"[{re.escape(string.punctuation)}]"
+
+        pattern = rf"""(?ix)
             (?P<prefix>[^\w\s]+?)?
             (?P<number>
                 (\d+[.]\d+)|
@@ -65,10 +69,10 @@ class NumberParser:
                 (\d+[.])|
                 \d+
             )
-            (?P<suffix>[^\w\s]+?)?
+            (?P<suffix>[a-z]*{punct_pattern}*)?
         """
 
-        match = re.match(pattern, self._text)
+        match = re.fullmatch(pattern, self._text)
         if not match:
             return
 

@@ -9,7 +9,6 @@ Utilities for splitting a text line into content and newline parts.
 import re
 
 from rewordapp.token import build_token
-from rewordapp.token import rewrite_token_content
 
 
 class Line:
@@ -19,7 +18,7 @@ class Line:
         self._raw = text
         self._content = text.rstrip("\r\n")
         self._newline = text[len(self._content):]
-        self._rewritten_content = ""
+        self._rewritten = ""
         self.rules = rules if isinstance(rules, dict) else {}
 
     @property
@@ -38,20 +37,18 @@ class Line:
         return self._newline
 
     @property
-    def rewritten_content(self) -> str:
+    def rewritten(self) -> str:
         """Return the rewritten line content, generating it once and caching the result."""
         # Return cached value if already computed
-        if self._rewritten_content:
-            return self._rewritten_content
+        if self._rewritten:
+            return self._rewritten
 
         tokens = self.tokenize()
         if not tokens:
             return ""
 
-        self._rewritten_content = "".join(
-            rewrite_token_content(token) for token in tokens
-        )
-        return self._rewritten_content
+        self._rewritten = "".join(token.rewritten for token in tokens)
+        return self._rewritten
 
     def tokenize(self):
         """Split content into tokens and update the token registry."""
