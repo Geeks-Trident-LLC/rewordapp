@@ -107,8 +107,8 @@ class NetworkParser:
             addr = ipaddress.ip_address(self.info.address)
             self.info.update(value=int(addr))
             self.info.subnet = parsed.get("subnet", "")
-            self._prefix = parsed.get("prefix", "")
-            self._suffix = parsed.get("suffix", "")
+            self._prefix = parsed.get("prefix", "") or ""
+            self._suffix = parsed.get("suffix", "") or ""
 
     def _parse_ipv6(self) -> bool:
         """Attempt to parse IPv6 address with optional subnet."""

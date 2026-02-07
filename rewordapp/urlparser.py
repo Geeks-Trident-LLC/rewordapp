@@ -78,6 +78,13 @@ class URLParser:
         self.info.path = parsed.get("path") or ""
         self.info.query = parsed.get("query") or ""
         self.info.fragment = parsed.get("fragment") or ""
+        self.info.url = "".join(
+            [
+                self.info.scheme, self.info.user, self.info.host,
+                self.info.port, self.info.path, self.info.query,
+                self.info.fragment
+            ]
+        )
 
     def _parse(self) -> None:
         """Parse MAC address from raw text."""
@@ -97,8 +104,8 @@ class URLParser:
         if not match:
             return
 
-        self._prefix = self._text[:match.start()]
-        self._suffix = self._text[match.end():]
+        self._prefix = self._text[:match.start()] or ""
+        self._suffix = self._text[match.end():] or ""
         self._apply_parsed_fields(match.groupdict())
 
     def generate_new(self):

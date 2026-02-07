@@ -72,9 +72,9 @@ class NumberParser:
         if not match:
             return
 
-        self._prefix = match.groupdict().get("prefix", "")
-        self._number = match.groupdict().get("number", "")
-        self._suffix = match.groupdict().get("suffix", "")
+        self._prefix = match.groupdict().get("prefix") or ""
+        self._number = match.groupdict().get("number") or ""
+        self._suffix = match.groupdict().get("suffix") or ""
 
     def generate_new(self):
         if not self:

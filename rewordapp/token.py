@@ -2,6 +2,9 @@
 import re
 
 from rewordapp.netparser import IPv4Parser, IPv6Parser, MACParser
+from rewordapp.urlparser import URLParser
+from rewordapp.numberparser import NumberParser
+from rewordapp.wordparser import WordParser
 
 
 class BaseToken:
@@ -74,6 +77,13 @@ class BaseToken:
         """Compute masked form (default: unchanged)."""
         self._masked = self._text
 
+    def _update_parsed_node(self, parser_cls) -> None:
+        """Instantiate and store a parsed node if the parser produces a match."""
+        node = parser_cls(self._text)
+        if node:
+            self._matched = True
+            self.parsed_node = node
+
 
 # ---------------------------------------------------------------------------
 
@@ -82,6 +92,7 @@ class FallbackToken(BaseToken):
 
     def _detect(self) -> None:
         self._matched = True
+        self.parsed_node = self._text
 
 
 class WhitespaceToken(BaseToken):
@@ -89,16 +100,14 @@ class WhitespaceToken(BaseToken):
 
     def _detect(self) -> None:
         self._matched = bool(re.fullmatch(r"\s+", self._text))
+        self.parsed_node = self._text
 
 
 class IPv4Token(BaseToken):
     """Token representing an IPv4 address."""
 
     def _detect(self) -> None:
-        ipv4 = IPv4Parser(self._text)
-        if ipv4:
-            self._matched = True
-            self.parsed_node = ipv4
+        self._update_parsed_node(IPv4Parser)
 
     def __eq__(self, other):
         if isinstance(other, IPv4Token):
@@ -114,28 +123,43 @@ class IPv6Token(BaseToken):
     """Token representing an IPv6 address."""
 
     def _detect(self) -> None:
-        ipv6 = IPv6Parser(self._text)
-        if ipv6:
-            self._matched = True
-            self.parsed_node = ipv6
+        self._update_parsed_node(IPv6Parser)
 
 
 class MACToken(BaseToken):
     """Token representing a MAC address."""
 
     def _detect(self) -> None:
-        mac = MACParser(self._text)
-        if mac:
-            self._matched = True
-            self.parsed_node = mac
+        self._update_parsed_node(MACParser)
 
 
-def build_token(text: str,rules: dict | None = None):
+class URLToken(BaseToken):
+    """Token representing a URL."""
+    def _detect(self) -> None:
+        self._update_parsed_node(URLParser)
+
+
+class NumberToken(BaseToken):
+    """Token representing a number."""
+    def _detect(self) -> None:
+        self._update_parsed_node(NumberParser)
+
+
+class WordToken(BaseToken):
+    """Token representing a word."""
+    def _detect(self) -> None:
+        self._update_parsed_node(WordParser)
+
+
+def build_token(text: str, rules: dict | None = None):
     """Return the first token type that matches the given text."""
     token_types = [
+        URLToken,
         MACToken,
         IPv4Token,
         IPv6Token,
+        NumberToken,
+        WordToken,
         WhitespaceToken,
     ]
 
@@ -146,3 +170,16 @@ def build_token(text: str,rules: dict | None = None):
                 return token
 
     return FallbackToken(text, rules=rules)
+
+
+def rewrite_token_content(token):
+    """Return rewritten content for a token, applying generation rules when applicable."""
+    if not isinstance(token, BaseToken) or not token:
+        return ""
+
+    # Tokens that preserve their parsed content directly
+    if isinstance(token, (FallbackToken, WhitespaceToken)):
+        return token.parsed_node
+
+    # Tokens that support generating a new rewritten form
+    return token.parsed_node.generate_new().raw_text

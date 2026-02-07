@@ -69,9 +69,9 @@ class WordParser:
         if not match:
             return
 
-        self._prefix = match.groupdict().get("prefix", "")
-        self._word = match.groupdict().get("word", "")
-        self._suffix = match.groupdict().get("suffix", "")
+        self._prefix = match.groupdict().get("prefix") or ""
+        self._word = match.groupdict().get("word") or ""
+        self._suffix = match.groupdict().get("suffix") or ""
 
     def generate_new(self):
         if not self:
