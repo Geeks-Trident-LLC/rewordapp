@@ -8,9 +8,31 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 """
 
 import string
+from string import ascii_lowercase
+from string import ascii_uppercase
+from string import digits
 import random
 import re
 import ipaddress
+
+
+def shuffle_until_unique(origin, attempts=10):
+    """Shuffle a list until no element remains in its original position."""
+    shuffled = origin.copy()
+
+    for _ in range(attempts):
+        random.shuffle(shuffled)
+
+        # A position is allowed to match only if the value is zero-like ("0", "00", etc.)
+        if all(
+            str(item).strip("0") == "" or str(item) != str(origin[i])
+            for i, item in enumerate(shuffled)
+        ):
+            return shuffled
+
+    # Fallback: return a final shuffle even if a full derangement wasn't achieved
+    random.shuffle(shuffled)
+    return shuffled
 
 
 def build_char_map(*charsets):
@@ -19,9 +41,7 @@ def build_char_map(*charsets):
 
     for charset in charsets:
         chars = list(charset)
-        shuffled = chars.copy()
-        random.shuffle(shuffled)
-        mapping.update(zip(chars, shuffled))
+        mapping.update(zip(chars, shuffle_until_unique(chars)))
 
     return mapping
 
@@ -35,43 +55,52 @@ def build_ipv4_octet_map() -> dict[str, str]:
 
     for stop in ranges:
         original = [str(n) for n in range(start, stop)]
-        shuffled = original.copy()
-        random.shuffle(shuffled)
-        mapping.update(zip(original, shuffled))
+        mapping.update(zip(original, shuffle_until_unique(original)))
         start = stop
 
     return mapping
+
+
+def generate_random_binary(source):
+    """Return a zero‑padded binary string with the same length as the source."""
+    width = len(source)
+    value = random.randrange(2 ** width)
+    return format(value, f"0{width}b")
+
 
 
 class CharMapping:
     """Container for randomized character‑substitution maps used for rewriting text."""
 
     # Base character groups
-    letters_set = (string.ascii_lowercase, string.ascii_uppercase)
-    first_digit = random.choice("123456789")
+    letters_set = (ascii_lowercase, ascii_uppercase)
+    first_digit = random.choice(digits[1:])
+    digits_set = (digits[:1], digits[1:])
+    hex_set = (ascii_lowercase[:6], ascii_uppercase[:6], *digits_set)
+    alphanumeric_set = (*hex_set, ascii_lowercase[6:], ascii_uppercase[6:])
 
     # General mappings
     letters = build_char_map(*letters_set)
-    digits = build_char_map(string.digits)
-    base_number = build_char_map(string.digits)
-    fraction_number = build_char_map(string.digits)
-    alphanumeric = build_char_map(*letters_set, string.digits)
+    base_number = build_char_map(*digits_set)
+    fraction_number = build_char_map(*digits_set)
+    alphanumeric = build_char_map(*alphanumeric_set)
+    octal = build_char_map(digits[:1], digits[1:-2])
 
     # URL‑specific mappings
-    url_user = build_char_map(*letters_set, string.digits)
-    url_host = build_char_map(*letters_set, string.digits)
-    url_path = build_char_map(*letters_set, string.digits)
-    url_query = build_char_map(*letters_set, string.digits)
-    url_fragment = build_char_map(*letters_set, string.digits)
+    url_user = build_char_map(*alphanumeric_set)
+    url_host = build_char_map(*alphanumeric_set)
+    url_path = build_char_map(*alphanumeric_set)
+    url_query = build_char_map(*alphanumeric_set)
+    url_fragment = build_char_map(*alphanumeric_set)
 
     # MAC address mapping
     mac = (
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
     )
 
     # IPv4 address mapping
@@ -84,43 +113,45 @@ class CharMapping:
 
     # IPv6 address mapping
     ipv6 = (
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-        build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set),
+        build_char_map(*hex_set)
     )
 
     @classmethod
     def refresh(cls):
-        cls.first_digit = random.choice("123456789")
-
         """Regenerate all character‑mapping tables."""
+
+        cls.first_digit = random.choice("123456789")
+        # General mappings
         cls.letters = build_char_map(*cls.letters_set)
-        cls.digits = build_char_map(string.digits)
-        cls.base_number = build_char_map(string.digits)
-        cls.fraction_number = build_char_map(string.digits)
-        cls.alphanumeric = build_char_map(*cls.letters_set, string.digits)
+        cls.base_number = build_char_map(*cls.digits_set)
+        cls.fraction_number = build_char_map(*cls.digits_set)
+        cls.alphanumeric = build_char_map(*cls.alphanumeric_set)
 
         # URL‑specific mappings
-        cls.url_user = build_char_map(*cls.letters_set, string.digits)
-        cls.url_host = build_char_map(*cls.letters_set, string.digits)
-        cls.url_path = build_char_map(*cls.letters_set, string.digits)
-        cls.url_query = build_char_map(*cls.letters_set, string.digits)
-        cls.url_fragment = build_char_map(*cls.letters_set, string.digits)
+        cls.url_user = build_char_map(*cls.alphanumeric_set)
+        cls.url_host = build_char_map(*cls.alphanumeric_set)
+        cls.url_path = build_char_map(*cls.alphanumeric_set)
+        cls.url_query = build_char_map(*cls.alphanumeric_set)
+        cls.url_fragment = build_char_map(*cls.alphanumeric_set)
 
+        # MAC address mapping
         cls.mac = (
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set)
         )
 
+        # IPv4 address mapping
         cls.ipv4 = (
             build_ipv4_octet_map(),
             build_ipv4_octet_map(),
@@ -128,21 +159,38 @@ class CharMapping:
             build_ipv4_octet_map()
         )
 
+        # IPv6 address mapping
         cls.ipv6 = (
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
-            build_char_map("abcdef", "ABCDEF", "0", "123456789"),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set),
+            build_char_map(*cls.hex_set)
         )
 
 
-def apply_mapping(source: str, mapping: dict[str, str]) -> str:
-    """Return a rewritten string by substituting characters using the given mapping."""
-    return "".join(mapping.get(ch, ch) for ch in source)
+def apply_mapping(text: str, mapping: dict[str, str]) -> str:
+    """Rewrite a string by applying character mappings, with special handling for hex, binary, and octal prefixes."""
+    # Hexadecimal: 0xNN...
+    if re.fullmatch(r"(?i)0x[a-f0-9]+", text):
+        return text[:2] + "".join(mapping.get(ch, ch) for ch in text[2:])
+
+    # Binary: 0bNN...
+    if re.fullmatch(r"(?i)0b[01]+", text):
+        return text[:2] + generate_random_binary(text[2:])
+
+    # Octal: 0oNN... or 0NN...
+    if re.fullmatch(r"(?i)0o?[0-7]+", text):
+        prefix_len = 2 if "o" in text.lower() else 1
+        return text[:prefix_len] + "".join(
+            CharMapping.octal.get(ch, ch) for ch in text[prefix_len:]
+        )
+
+    # Default: apply generic mapping
+    return "".join(mapping.get(ch, ch) for ch in text)
 
 
 def new_word(text: str) -> str:
@@ -182,41 +230,50 @@ def new_word(text: str) -> str:
 
 def new_url(user="", host="", path="", query="", fragment=""):
     """Rewrite a single URL component using the appropriate character mapping."""
-
+    # User component
     if user:
         return apply_mapping(user, CharMapping.url_user)
-    elif host:
-        # Preserve the TLD when rewriting hostnames
+
+    # Host component (preserve TLD)
+    if host:
         if "." in host:
             domain, tld = host.rsplit(".", maxsplit=1)
             rewritten = apply_mapping(domain, CharMapping.url_host)
             return f"{rewritten}.{tld}"
         return apply_mapping(host, CharMapping.url_host)
-    elif path:
-        return apply_mapping(path, CharMapping.url_path)
+
+    # Determine which component is present
+    if path:
+        data, mapping = path, CharMapping.url_path
     elif query:
-        return apply_mapping(query, CharMapping.url_query)
+        data, mapping = query, CharMapping.url_query
     elif fragment:
-        return apply_mapping(fragment, CharMapping.url_fragment)
-    return ""
+        data, mapping = fragment, CharMapping.url_fragment
+    else:
+        return ""
 
+    # Preserve percent‑encoded sequences
+    encoded_re = r"(?i)%[a-f0-9]{2}"
+    if re.search(encoded_re, data):
+        parts = []
+        start = 0
+        last_match = None
 
-def new_digits(text: str) -> str:
-    """Rewrite a digit‑only string using digit mappings while preserving leading rules."""
-    if not text.isdigit():
-        return text
+        for match in re.finditer(encoded_re, data):
+            before = data[start:match.start()]
+            parts.append(apply_mapping(before, mapping))
+            parts.append(match.group())  # keep %XX unchanged
+            start = match.end()
+            last_match = match
 
-    # Zero stays unchanged
-    if int(text) == 0:
-        return text
+        if last_match:
+            after = data[last_match.end():]
+            parts.append(apply_mapping(after, mapping))
 
-    rewritten = apply_mapping(text, CharMapping.digits)
+        return "".join(parts)
 
-    # Avoid leading zero in multi‑digit results
-    if len(rewritten) > 1 and rewritten[0] == "0":
-        return f"{CharMapping.first_digit}{rewritten[1:]}"
-
-    return rewritten
+    # No percent‑encoding → rewrite whole component
+    return apply_mapping(data, mapping)
 
 
 def new_number(text: str) -> str:
@@ -248,9 +305,16 @@ def new_number(text: str) -> str:
 
         return rewritten
 
-    # Integer number
-    rewritten = apply_mapping(text, CharMapping.base_number)
+    # binary
+    if re.fullmatch("0[01]+", text):
+        return generate_random_binary(text)
 
+    # octal
+    if re.fullmatch("0[0-7]+", text):
+        return apply_mapping(text, CharMapping.octal)
+
+    # generic integer
+    rewritten = apply_mapping(text, CharMapping.base_number)
     if re.match(r"0[0-9]", rewritten):
         return f"{CharMapping.first_digit}{rewritten[1:]}"
 
