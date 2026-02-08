@@ -28,7 +28,8 @@ class TestLineCls:
             "Approximate round trip times in milli-seconds:",
             "Minimum = 12ms, Maximum = 16ms, Average = 14ms",
             "Link-local IPv6 Address ......... : fe80::331:b12e:54da:7225%5",
-            "Physical Address. ............... : C4-BD-E5-13-0C-B3"
+            "Physical Address. ............... : C4-BD-E5-13-0C-B3",
+            "DHCPv6 Client DUID. ............. : 00-01-00-01-59-4C-58-4C-C4-1D-EA-C3-1C-23"
         ],
     )
     def test_rewritten(self, data):
@@ -140,7 +141,24 @@ class TestLineCls:
                     "WhitespaceToken",
                     "MACToken",
                 )
+            ),
+            (
+                "DHCPv6 Client DUID. ............. : 00-01-00-01-59-4C-58-4C-C4-1D-EA-C3-1C-23",
+                (
+                    "WordToken",
+                    "WhitespaceToken",
+                    "WordToken",
+                    "WhitespaceToken",
+                    "WordToken",
+                    "WhitespaceToken",
+                    "FallbackToken",
+                    "WhitespaceToken",
+                    "FallbackToken",
+                    "WhitespaceToken",
+                    "MACToken",
+                )
             )
+
         ],
     )
     def test_rewritten(self, data, expected):

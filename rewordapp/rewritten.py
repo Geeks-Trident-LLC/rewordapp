@@ -337,11 +337,11 @@ def new_mac_address(address: str) -> str:
     octets = re.findall(f".{{{octet_size}}}", compact)
 
     count = len(octets)
-    if count not in (4, 6):
+    if count % 2 == 1 or count % 2 == 0 and count < 4:
         return address
 
     # Rewrite only the second half
-    midpoint = count // 2
+    midpoint = count // 2 if count in (4, 6) else 3
     rewritten = octets[:midpoint]
 
     for idx, octet in enumerate(octets[midpoint:]):

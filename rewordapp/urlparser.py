@@ -50,7 +50,7 @@ class URLParser:
     # ------------------------------------------------------------
 
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         return self._text
 
     @property

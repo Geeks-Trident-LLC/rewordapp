@@ -65,7 +65,7 @@ class NetworkParser:
 
     # --- Properties ---
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         return self._text
 
     @property
@@ -143,10 +143,10 @@ class IPv4Parser(NetworkParser):
 
     def generate_new(self):
         if not self:
-            return self.__class__(self.raw_text)
+            return self.__class__(self.raw)
 
         if self.is_valid_netmask():
-            return self.__class__(self.raw_text)
+            return self.__class__(self.raw)
 
         new_address = rewritten.new_ipv4_address(self.address)
         return self.__class__(f"{self.prefix}{new_address}{self.subnet}{self.suffix}")
@@ -184,7 +184,7 @@ class IPv6Parser(NetworkParser):
 
     def generate_new(self):
         if not self:
-            return self.__class__(self.raw_text)
+            return self.__class__(self.raw)
 
         new_address = rewritten.new_ipv6_address(self.address)
         return self.__class__(f"{self.prefix}{new_address}{self.subnet}{self.suffix}")
@@ -222,7 +222,7 @@ class MACParser:
     # ------------------------------------------------------------
 
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         return self._text
 
     @property
@@ -262,10 +262,10 @@ class MACParser:
             (?ix)
             (?P<prefix>.*[^0-9a-f])?
             (?P<address>
-                ([0-9a-f]{2}(:[0-9a-f]{2}){5}) |
-                ([0-9a-f]{2}(-[0-9a-f]{2}){5}) |
+                ([0-9a-f]{2}(:[0-9a-f]{2}){5,}) |
+                ([0-9a-f]{2}(-[0-9a-f]{2}){5,}) |
                 ([0-9a-f]{3}([.][0-9a-f]{3}){3}) |
-                ([0-9a-f]{12})
+                ([0-9a-f]{12,})
             )
             (?P<suffix>[^0-9a-f].*)?$
         """.strip()
@@ -284,8 +284,8 @@ class MACParser:
         # Broadcast or zero MAC → return unchanged
         if self:
             if self.value in (0, int("f" * 12, 16)):
-                return self.__class__(self.raw_text)
+                return self.__class__(self.raw)
 
             new_mac_addr = rewritten.new_mac_address(self.address)
             return self.__class__(f"{self.prefix}{new_mac_addr}{self.suffix}")
-        return self.__class__(self.raw_text)
+        return self.__class__(self.raw)

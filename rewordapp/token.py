@@ -60,7 +60,7 @@ class BaseToken:
         if isinstance(self.parsed_node, str):
             return self.parsed_node
 
-        self._rewritten = self.parsed_node.generate_new().raw_text
+        self._rewritten = self.parsed_node.generate_new().raw
         return self._rewritten
 
     # --- Processing pipeline -------------------------------------------------

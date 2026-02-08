@@ -21,7 +21,7 @@ class RewordBuilder:
         self._lines = [Line(line) for line in self._text.splitlines(keepends=True)]
 
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         """Return the original unmodified text."""
         return self._text
 

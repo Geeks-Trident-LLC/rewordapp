@@ -37,7 +37,7 @@ class NumberParser:
     # ------------------------------------------------------------
 
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         return self._text
 
     @property
@@ -82,7 +82,7 @@ class NumberParser:
 
     def generate_new(self):
         if not self:
-            return self.__class__(self.raw_text)
+            return self.__class__(self.raw)
 
         new_number = rewritten.new_number(self.number)
         return self.__class__(f"{self.prefix}{new_number}{self.suffix}")

@@ -37,7 +37,7 @@ class WordParser:
     # ------------------------------------------------------------
 
     @property
-    def raw_text(self) -> str:
+    def raw(self) -> str:
         return self._text
 
     @property
@@ -75,7 +75,7 @@ class WordParser:
 
     def generate_new(self):
         if not self:
-            return self.__class__(self.raw_text)
+            return self.__class__(self.raw)
 
         new_word = rewritten.new_word(self.word)
         return self.__class__(f"{self.prefix}{new_word}{self.suffix}")
