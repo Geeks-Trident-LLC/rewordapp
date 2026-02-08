@@ -24,7 +24,6 @@ def is_valid_network(network: str) -> bool:
         subnet = parts[0] if parts else None
 
         net = ipaddress.ip_network(address)
-
         # No subnet provided → valid
         if subnet is None:
             return True
@@ -110,7 +109,53 @@ class NetworkParser:
             self._prefix = parsed.get("prefix", "") or ""
             self._suffix = parsed.get("suffix", "") or ""
 
-    def _parse_ipv6(self) -> bool:
+    def _parse(self) -> None:
+        """Base class requiring subclasses to implement `_parse`."""
+        raise NotImplementedError(
+            f"{self.__class__.__name__} must implement the `_parse` method."
+        )
+
+
+class IPv4Parser(NetworkParser):
+    """Parser for IPv4 addresses with utilities for netmask validation and regeneration."""
+
+    def _parse(self) -> bool:
+        """Attempt to parse IPv4 address with optional subnet."""
+        pattern = r"""
+            (?ix)
+            (?P<prefix>.*[^\d])?
+            (?P<network>
+                (?P<address>\d{1,3}(\.\d{1,3}){3})
+                ((?P<subnet>/\d{1,2}))?
+            )
+            (?P<suffix>[^\d].*)?$
+        """.strip()
+        matched, result = self._match_regex(pattern)
+        if not matched or not is_valid_network(result.get("network")):
+            return False
+        self._apply_parsed_fields(result)
+        return True
+
+    def is_valid_netmask(self) -> bool:
+        """Return True if the current value represents a valid IPv4 netmask."""
+        full_range = 2 ** 32
+        return any((full_range - self.value) == (2 ** bit) for bit in range(32))
+
+    def generate_new(self):
+        if not self:
+            return self.__class__(self.raw_text)
+
+        if self.is_valid_netmask():
+            return self.__class__(self.raw_text)
+
+        new_address = rewritten.new_ipv4_address(self.address)
+        return self.__class__(f"{self.prefix}{new_address}{self.subnet}{self.suffix}")
+
+
+class IPv6Parser(NetworkParser):
+    """Parser for IPv6 addresses with utilities for netmask validation and regeneration."""
+
+    def _parse(self) -> bool:
         """Attempt to parse IPv6 address with optional subnet."""
         pattern = r"""
             (?ix)
@@ -136,51 +181,6 @@ class NetworkParser:
             return False
         self._apply_parsed_fields(result)
         return True
-
-    def _parse_ipv4(self) -> bool:
-        """Attempt to parse IPv4 address with optional subnet."""
-        pattern = r"""
-            (?ix)
-            (?P<prefix>.*[^\d])?
-            (?P<network>
-                (?P<address>\d{1,3}(\.\d{1,3}){3})
-                ((?P<subnet>/\d{1,2}))?
-            )
-            (?P<suffix>[^\d].*)?$
-        """.strip()
-        matched, result = self._match_regex(pattern)
-        if not matched or not is_valid_network(result.get("network")):
-            return False
-        self._apply_parsed_fields(result)
-        return True
-
-    def _parse(self) -> None:
-        """Try parsing as IPv6 first, then IPv4."""
-        if not self._parse_ipv6():
-            self._parse_ipv4()
-
-
-class IPv4Parser(NetworkParser):
-    """Parser for IPv4 addresses with utilities for netmask validation and regeneration."""
-
-    def is_valid_netmask(self) -> bool:
-        """Return True if the current value represents a valid IPv4 netmask."""
-        full_range = 2 ** 32
-        return any((full_range - self.value) == (2 ** bit) for bit in range(32))
-
-    def generate_new(self):
-        if not self:
-            return self.__class__(self.raw_text)
-
-        if self.is_valid_netmask():
-            return self.__class__(self.raw_text)
-
-        new_address = rewritten.new_ipv4_address(self.address)
-        return self.__class__(f"{self.prefix}{new_address}{self.subnet}{self.suffix}")
-
-
-class IPv6Parser(NetworkParser):
-    """Parser for IPv6 addresses with utilities for netmask validation and regeneration."""
 
     def generate_new(self):
         if not self:

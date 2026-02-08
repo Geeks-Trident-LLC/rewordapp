@@ -163,8 +163,8 @@ def build_token(text: str, rules: dict | None = None):
     token_types = [
         URLToken,
         MACToken,
-        IPv4Token,
         IPv6Token,
+        IPv4Token,
         NumberToken,
         WordToken,
         WhitespaceToken,
