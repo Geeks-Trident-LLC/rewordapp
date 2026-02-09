@@ -26,15 +26,18 @@ class RewordBuilder:
         return self._text
 
     @property
-    def rewritten_text(self) -> str:
+    def line_count(self) -> int:
+        """Return the number of lines contained in this object."""
+        return len(self._lines)
+
+    @property
+    def rewritten(self) -> str:
         """Return the transformed text after applying rewrite rules."""
-        self.apply_transform()
+        if self.line_count == 0:
+            return ""
+
         parts = []
         for line in self._lines:
-            parts.append(line.content)
+            parts.append(line.rewritten)
             parts.append(line.newline)
         return "".join(parts)
-
-    def apply_transform(self) -> None:
-        """Apply rewrite rules to each line (override in subclasses)."""
-        pass

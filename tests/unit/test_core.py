@@ -19,4 +19,5 @@ class TestRewordBuilder:
                 Minimum = 12ms, Maximum = 16ms, Average = 14ms
         """)
         builder = RewordBuilder(txt)
-        assert builder.rewritten_text == txt
+        assert builder.rewritten != txt
+        assert len(builder.rewritten) == len(txt)

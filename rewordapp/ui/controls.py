@@ -14,6 +14,8 @@ from rewordapp.ui import helper as ui_helper
 
 from rewordapp.deps import genericlib_file_module as file
 
+from rewordapp.core import RewordBuilder
+
 button_width = 5.5 if ui.is_macos else 8
 
 def build_controls_frame(parent, app) -> None:
@@ -149,8 +151,23 @@ def reset_textarea(app) -> None:
 
 
 def perform_reword(app) -> None:
-    """Display a placeholder dialog for the reword feature (not yet implemented)."""
-    ui_helper.show_message_dialog(
-        title="Reword Feature Placeholder",
-        info="This feature will be implemented in a future release."
-    )
+    """Rewrite user text and display the result in the output area."""
+    raw = app.user_textarea.get("1.0", "end")
+
+    # Strip a single trailing newline added by Tkinter
+    text = re.sub(r"\r?\n|\r$", "", raw, count=1)
+
+    # Check for any non‑whitespace content
+    if len(re.sub(r"\s+", "", text)) > 0:
+        builder = RewordBuilder(text)
+
+        app.output_textarea.config(state=ui.tk.NORMAL)
+        app.output_textarea.delete("1.0", "end")
+        app.output_textarea.insert("1.0", builder.rewritten)
+        app.output_textarea.config(state=ui.tk.DISABLED)
+
+    else:
+        ui_helper.show_message_dialog(
+            title="Reword Feature",
+            info="Cannot rewrite empty content."
+        )

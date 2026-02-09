@@ -32,6 +32,16 @@ class Line:
         return self._content
 
     @property
+    def length(self):
+        """Return the length of the line."""
+        return len(self._content)
+
+    @property
+    def is_nonempty(self):
+        """Return True if the line has data."""
+        return bool(re.sub(r"\s+", "", self._content))
+
+    @property
     def newline(self) -> str:
         """Return the trailing newline characters (if any)."""
         return self._newline
@@ -52,6 +62,10 @@ class Line:
 
     def tokenize(self):
         """Split content into tokens and update the token registry."""
+
+        if not self.is_nonempty:
+            return []
+
         tokens = []
         cursor = 0
         last_match_end = 0
