@@ -12,6 +12,7 @@ import re
 
 from rewordapp.ui import helper as ui_helper
 from rewordapp.ui import comparison
+from rewordapp.ui import reditor
 
 from rewordapp.deps import genericlib_file_module as file
 
@@ -85,6 +86,15 @@ def build_action_buttons(parent, app) -> None:
     ui.create_widget(
         "button", parent=parent, text="Reword", width=button_width,
         command=lambda: perform_reword(app),
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
+    )
+
+    sep = ui.ttk.Separator(parent, orient="vertical")
+    sep.grid(row=0, column=position.increment(), sticky="ns", padx=2, pady=2)
+
+    ui.create_widget(
+        "button", parent=parent, text="Rules", width=button_width,
+        command=lambda: reditor.show(app),
         layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
