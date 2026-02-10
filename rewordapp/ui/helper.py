@@ -267,3 +267,10 @@ def open_app_resource(resource: str) -> None:
     url = resources.get(resource)
     if url:
         webbrowser.open_new_tab(url)
+
+
+def extract_text(textarea) -> str:
+    """Return textarea content without the trailing newline added by Tkinter."""
+    text = textarea.get("1.0", "end")
+    last_two = text[-2:]
+    return text[:-2] if last_two == "\r\n" else text[:-1]

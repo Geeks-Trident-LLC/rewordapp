@@ -11,6 +11,7 @@ import rewordapp.ui as ui
 import re
 
 from rewordapp.ui import helper as ui_helper
+from rewordapp.ui import comparison
 
 from rewordapp.deps import genericlib_file_module as file
 
@@ -67,6 +68,13 @@ def build_action_buttons(parent, app) -> None:
         command=lambda: perform_reword(app),
         layout = ("grid", dict(row=0, column=5, pady=2))
     )
+
+    for index, mode in enumerate(["weave"]):
+        ui.create_widget(
+            "button", parent=parent, text=mode.title(), width=button_width,
+            command=lambda: comparison.show_diff(app, mode),
+            layout = ("grid", dict(row=0, column=6 + index, pady=2))
+        )
 
 def import_file_to_input(app) -> None:
     """Open a file dialog and load selected file content into the user input textarea."""
@@ -152,10 +160,7 @@ def reset_textarea(app) -> None:
 
 def perform_reword(app) -> None:
     """Rewrite user text and display the result in the output area."""
-    raw = app.user_textarea.get("1.0", "end")
-
-    # Strip a single trailing newline added by Tkinter
-    text = re.sub(r"\r?\n|\r$", "", raw, count=1)
+    text = ui_helper.extract_text(app.user_textarea)
 
     # Check for any non‑whitespace content
     if len(re.sub(r"\s+", "", text)) > 0:
