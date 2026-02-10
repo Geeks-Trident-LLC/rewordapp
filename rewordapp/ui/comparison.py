@@ -33,7 +33,7 @@ def show_diff(app, mode):
         return
 
     # Build error message
-    title = f"{mode.title()} Feature"
+    title = f"{mode.title()} View"
 
     if out_len == 0 and user_len > 0:
         info = f"Cannot perform {mode} because there is no rewritten text."
@@ -47,28 +47,56 @@ def show_diff(app, mode):
 
 def show_dialog(app, mode):
     """Display a mode‑specific dialog with header and styled text areas."""
+    user_input = ui_helper.extract_text(app.user_textarea)
+    output = ui_helper.extract_text(app.output_textarea)
+
     dialog = create_dialog(app.root, mode)
     add_app_header(dialog, mode)
     text_frame = create_frame(dialog, mode)
-
-    user_input = ui_helper.extract_text(app.user_textarea)
-    output = ui_helper.extract_text(app.output_textarea)
     add_textarea(text_frame, mode, user_input, output)
 
 
 def create_dialog(parent, mode):
     """Create a resizable dialog window for the Weave tool."""
     dialog = ui.Toplevel(parent)
-    dialog.title(f"{mode.title()} - RewordApp CE")
+    dialog.title(f"{mode.title()} View - RewordApp CE")
     dialog.resizable(True, True)
 
+    # Set size first
+    width = 1000 if mode == "side-by-side" else 600
+    height = 600 if mode == "interleave" else 800 if mode == "stack" else 400
+    dialog.geometry(f"{width}x{height}")
+
+    # Center relative to parent
+    center_dialog(dialog, parent, width, height)
+
     # --- Layout configuration ---
-    dialog.grid_rowconfigure(1, weight=1)      # Text area expands vertically
-    dialog.grid_columnconfigure(0, weight=1)   # Everything expands horizontally
+    dialog.grid_columnconfigure(0, weight=1)    # Everything expands horizontally
+    dialog.grid_rowconfigure(1, weight=1)       # Text area expands vertically
+    if mode == "stack":
+        dialog.grid_rowconfigure(2, weight=1)
 
     ui_logo.set_window_icon(dialog)
 
     return dialog
+
+
+def center_dialog(dialog, parent, width, height):
+    """Center a Toplevel dialog relative to its parent window."""
+    # parent.update_idletasks()
+    # dialog.update_idletasks()
+
+    # Parent geometry
+    px = parent.winfo_rootx()
+    py = parent.winfo_rooty()
+    pw = parent.winfo_width()
+    ph = parent.winfo_height()
+
+    # Compute centered position
+    x = px + (pw - width) // 2
+    y = py + (ph - height) // 2
+
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
 
 
 def add_app_header(parent, mode):
@@ -101,19 +129,25 @@ def create_frame(parent, mode):
     frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
 
     frame.grid_rowconfigure(0, weight=1)
+    if mode == "stack":
+        frame.grid_rowconfigure(1, weight=1)
+
+    frame.grid_columnconfigure(0, weight=1)
     if mode == "side-by-side":
         frame.grid_columnconfigure(1, weight=1)
 
-    frame.grid_columnconfigure(0, weight=1)
     return frame
 
 
 def add_textarea(parent, mode, user_input, output):
     """Add the appropriate text layout widget based on the selected mode."""
-    if mode == "interleave":
-        add_interleave(parent, user_input, output)
-    elif mode == "side-by-side":
-        add_side_by_side(parent, user_input, output)
+    mapping = {
+        "interleave": add_interleave,
+        "side-by-side": add_side_by_side,
+        "stack": add_stack
+    }
+    func = mapping.get(mode, add_interleave)
+    func(parent, user_input, output)
 
 
 def add_interleave(parent, user_input, output):
@@ -159,18 +193,22 @@ def add_interleave(parent, user_input, output):
         else:
             text.insert("end", odd_line, "odd")
 
+    text.config(state="disabled")
+
 
 def add_side_by_side(parent, user_input, output):
     """Display two synchronized text areas side by side."""
     # --- Create two text widgets ---
     font = Font(family="Courier", size=10)
     left = tk.Text(parent, font=font, wrap="none")
-    left.grid(row=0, column=0, sticky="nsew")
+    left.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
     left.insert(tk.INSERT, user_input)
+    left.config(state="disabled")
 
     right = tk.Text(parent, font=font, foreground="blue", wrap="none")
-    right.grid(row=0, column=1, sticky="nsew")
+    right.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
     right.insert(tk.INSERT, output)
+    right.config(state="disabled")
 
     # --- Shared scrollbars ---
     vscroll = tk.Scrollbar(parent, orient="vertical")
@@ -212,3 +250,59 @@ def add_side_by_side(parent, user_input, output):
     # Connect text widgets
     left.config(yscrollcommand=on_left_y, xscrollcommand=on_left_x)
     right.config(yscrollcommand=on_right_y, xscrollcommand=on_right_x)
+
+
+def add_stack(parent, user_input, output):
+    """Display two synchronized text areas top-down layout."""
+    # --- Create two text widgets ---
+    font = Font(family="Courier", size=10)
+    top = tk.Text(parent, font=font, wrap="none")
+    top.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
+    top.insert(tk.INSERT, user_input)
+    top.config(state="disabled")
+
+    bottom = tk.Text(parent, font=font, foreground="blue", wrap="none")
+    bottom.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
+    bottom.insert(tk.INSERT, output)
+    bottom.config(state="disabled")
+
+    # --- Shared scrollbars ---
+    vscroll = tk.Scrollbar(parent, orient="vertical")
+    hscroll = tk.Scrollbar(parent, orient="horizontal")
+
+    vscroll.grid(row=0, column=1, rowspan=2, sticky="ns")
+    hscroll.grid(row=2, column=0, sticky="ew")
+
+    # --- Vertical sync ---
+    def sync_y(*args):
+        top.yview(*args)
+        bottom.yview(*args)
+
+    def on_top_y(*args):
+        bottom.yview_moveto(args[0])
+        vscroll.set(*args)
+
+    def on_bottom_y(*args):
+        top.yview_moveto(args[0])
+        vscroll.set(*args)
+
+    # --- Horizontal sync ---
+    def sync_x(*args):
+        top.xview(*args)
+        bottom.xview(*args)
+
+    def on_top_x(*args):
+        bottom.xview_moveto(args[0])
+        hscroll.set(*args)
+
+    def on_bottom_x(*args):
+        top.xview_moveto(args[0])
+        hscroll.set(*args)
+
+    # Connect scrollbars
+    vscroll.config(command=sync_y)
+    hscroll.config(command=sync_x)
+
+    # Connect text widgets
+    top.config(yscrollcommand=on_top_y, xscrollcommand=on_top_x)
+    bottom.config(yscrollcommand=on_bottom_y, xscrollcommand=on_bottom_x)

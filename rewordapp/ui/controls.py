@@ -76,9 +76,15 @@ def build_action_buttons(parent, app) -> None:
     )
 
     ui.create_widget(
+        "button", parent=parent, text="Stack", width=button_width,
+        command=lambda: comparison.show_diff(app, "stack"),
+        layout=("grid", dict(row=0, column=7 , pady=2))
+    )
+
+    ui.create_widget(
         "button", parent=parent, text="Pair", width=button_width,
         command=lambda: comparison.show_diff(app, "side-by-side"),
-        layout=("grid", dict(row=0, column=7 , pady=2))
+        layout=("grid", dict(row=0, column=8 , pady=2))
     )
 
 
