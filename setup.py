@@ -24,7 +24,8 @@ setup(
     maintainer_email="tuyen@geekstrident.com",
     install_requires=[
         "genericlib",
-        "regexapp"
+        "regexapp",
+        "pyyaml"
     ],
     url="https://github.com/Geeks-Trident-LLC/rewordapp",
     packages=find_packages(

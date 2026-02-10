@@ -6,8 +6,8 @@ This module centralizes configuration settings and constants for RewordApp CE.
 """
 
 from os import path
+import yaml
 
-from rewordapp.deps import genericlib_file_module as file
 from rewordapp.deps import genericlib_version
 from rewordapp.deps import genericlib_dedent_and_strip as dedent_and_strip
 from rewordapp.deps import regexapp_version
@@ -28,6 +28,9 @@ genericlib_link = "https://pypi.org/project/genericlib/"
 
 regexapp_text = 'regexapp v{}'.format(regexapp_version)
 regexapp_link = 'https://pypi.org/project/regexapp'
+
+pyyaml_text = f"pyyaml v{yaml.__version__}"
+pyyaml_link = "https://pypi.org/project/PyYAML/"
 
 # company
 company = 'Geeks Trident LLC'
@@ -80,14 +83,9 @@ license = dedent_and_strip(
 def get_dependency():
     """Return a dictionary of package dependencies with names and PyPI links."""
     dependencies = dict(
-        genericlib=dict(
-            package=genericlib_text,
-            url=genericlib_link
-        ),
-        regexapp=dict(
-            package=regexapp_text,
-            url=regexapp_link
-        )
+        genericlib=dict(package=genericlib_text, url=genericlib_link),
+        regexapp=dict(package=regexapp_text, url=regexapp_link),
+        pyyaml=dict(package=pyyaml_text, url=pyyaml_link),
     )
     return dependencies
 

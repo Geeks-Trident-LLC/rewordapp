@@ -94,8 +94,7 @@ def add_dependency_panel(parent: Any) -> None:
             layout=("grid", dict(row=row, column=column % 2, padx=(20, 0), sticky=tk.W))
         )
 
-        if column > 0 and column % 2 == 0:
-            row += 1
+        row += column % 2
         column += 1
 
 
