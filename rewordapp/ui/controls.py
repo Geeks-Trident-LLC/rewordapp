@@ -69,12 +69,18 @@ def build_action_buttons(parent, app) -> None:
         layout = ("grid", dict(row=0, column=5, pady=2))
     )
 
-    for index, mode in enumerate(["weave"]):
-        ui.create_widget(
-            "button", parent=parent, text=mode.title(), width=button_width,
-            command=lambda: comparison.show_diff(app, mode),
-            layout = ("grid", dict(row=0, column=6 + index, pady=2))
-        )
+    ui.create_widget(
+        "button", parent=parent, text="Weave", width=button_width,
+        command=lambda: comparison.show_diff(app, "interleave"),
+        layout=("grid", dict(row=0, column=6 , pady=2))
+    )
+
+    ui.create_widget(
+        "button", parent=parent, text="Pair", width=button_width,
+        command=lambda: comparison.show_diff(app, "side-by-side"),
+        layout=("grid", dict(row=0, column=7 , pady=2))
+    )
+
 
 def import_file_to_input(app) -> None:
     """Open a file dialog and load selected file content into the user input textarea."""
