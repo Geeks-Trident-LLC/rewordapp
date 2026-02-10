@@ -236,11 +236,21 @@ def new_url(user="", host="", path="", query="", fragment=""):
 
     # Host component (preserve TLD)
     if host:
-        if "." in host:
+        if host.count(".") == 0:
+            return apply_mapping(host, CharMapping.url_host)
+
+        if host.count(".") == 1:
             domain, tld = host.rsplit(".", maxsplit=1)
             rewritten = apply_mapping(domain, CharMapping.url_host)
             return f"{rewritten}.{tld}"
-        return apply_mapping(host, CharMapping.url_host)
+        subdomain, *other, tld = host.split(".")
+        rewritten = apply_mapping(".".join(other), CharMapping.url_host)
+        if re.fullmatch(r"(?i)[a-z][a-z0-9]+", subdomain):
+            return f"{subdomain}.{rewritten}.{tld}"
+
+        rewritten_subdomain = apply_mapping(subdomain, CharMapping.url_host)
+        return f"{rewritten_subdomain}.{rewritten}.{tld}"
+
 
     # Determine which component is present
     if path:
@@ -345,7 +355,7 @@ def new_mac_address(address: str) -> str:
     rewritten = octets[:midpoint]
 
     for idx, octet in enumerate(octets[midpoint:]):
-        mapped = apply_mapping(octet, CharMapping.mac[idx])
+        mapped = apply_mapping(octet, CharMapping.mac[idx % 6])
         rewritten.append(mapped)
 
     return sep.join(rewritten)

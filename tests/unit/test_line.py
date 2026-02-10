@@ -161,7 +161,7 @@ class TestLineCls:
 
         ],
     )
-    def test_rewritten(self, data, expected):
+    def test_tokenize(self, data, expected):
         line = Line(data)
         tokens = line.tokenize()
         tokens_names = [type(token).__name__ for token in tokens]

@@ -260,14 +260,14 @@ class MACParser:
         """Parse MAC address from raw text."""
         pattern = r"""
             (?ix)
-            (?P<prefix>.*[^0-9a-f])?
+            (?P<prefix>.*[^0-9a-f:-])?
             (?P<address>
                 ([0-9a-f]{2}(:[0-9a-f]{2}){5,}) |
                 ([0-9a-f]{2}(-[0-9a-f]{2}){5,}) |
                 ([0-9a-f]{3}([.][0-9a-f]{3}){3}) |
                 ([0-9a-f]{12,})
             )
-            (?P<suffix>[^0-9a-f].*)?$
+            (?P<suffix>[^0-9a-f:-].*)?$
         """.strip()
 
         match = re.match(pattern, self._text)
