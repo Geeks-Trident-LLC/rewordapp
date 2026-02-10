@@ -7,7 +7,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="rewordapp",
-    version="0.1.0a2",  # pre-alpha versioning to signal alpha/beta status
+    version="0.2.1a1",  # pre-alpha versioning to signal alpha/beta status
     license="BSD-3-Clause",
     license_files=["LICENSE"],
     description="A versatile Python utility that transforms text into readable "
