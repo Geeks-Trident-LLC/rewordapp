@@ -19,6 +19,19 @@ from rewordapp.core import RewordBuilder
 
 button_width = 5.5 if ui.is_macos else 8
 
+
+class Position:
+    """Simple counter that tracks a numeric position."""
+
+    def __init__(self, value: int = 0) -> None:
+        self.value = value
+
+    def increment(self) -> int:
+        """Increase the position by one and return the new value."""
+        self.value += 1
+        return self.value
+
+
 def build_controls_frame(parent, app) -> None:
     """Create a control frame with buttons for file operations and text management."""
     frame = ui.create_widget(
@@ -33,58 +46,67 @@ def build_controls_frame(parent, app) -> None:
 
 def build_action_buttons(parent, app) -> None:
     """Create action buttons for file operations and text management within the given parent frame."""
+
+    position = Position()
+
     ui.create_widget(
         "button", parent=parent, text="Open", width=button_width,
         command=lambda: import_file_to_input(app),
-        layout = ("grid", dict(row=0, column=0, pady=2))
+        layout = ("grid", dict(row=0, column=position.value, pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Save", width=button_width,
         command=lambda: export_output_to_file(app),
-        layout = ("grid", dict(row=0, column=1, pady=2))
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Copy", width=button_width,
         command=lambda: copy_output_to_clipboard(app),
-        layout = ("grid", dict(row=0, column=2, pady=2))
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Paste", width=button_width,
         command=lambda: paste_from_clipboard(app),
-        layout = ("grid", dict(row=0, column=3, pady=2))
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Clear", width=button_width,
         command=lambda: reset_textarea(app),
-        layout = ("grid", dict(row=0, column=4, pady=2))
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
+
+    sep = ui.ttk.Separator(parent, orient="vertical")
+    sep.grid(row=0, column=position.increment(), sticky="ns", padx=2, pady=2)
 
     ui.create_widget(
         "button", parent=parent, text="Reword", width=button_width,
         command=lambda: perform_reword(app),
-        layout = ("grid", dict(row=0, column=5, pady=2))
+        layout = ("grid", dict(row=0, column=position.increment(), pady=2))
     )
+
+    sep = ui.ttk.Separator(parent, orient="vertical")
+    sep.grid(row=0, column=position.increment(), sticky="ns", padx=2, pady=2)
 
     ui.create_widget(
         "button", parent=parent, text="Weave", width=button_width,
         command=lambda: comparison.show_diff(app, "interleave"),
-        layout=("grid", dict(row=0, column=6 , pady=2))
+        layout=("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Stack", width=button_width,
         command=lambda: comparison.show_diff(app, "stack"),
-        layout=("grid", dict(row=0, column=7 , pady=2))
+        layout=("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
     ui.create_widget(
         "button", parent=parent, text="Pair", width=button_width,
         command=lambda: comparison.show_diff(app, "side-by-side"),
-        layout=("grid", dict(row=0, column=8 , pady=2))
+        layout=("grid", dict(row=0, column=position.increment(), pady=2))
     )
 
 
