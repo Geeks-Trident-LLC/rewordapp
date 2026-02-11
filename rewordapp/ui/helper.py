@@ -23,6 +23,85 @@ import rewordapp.ui as ui
 import rewordapp.config as config
 
 
+class Position:
+    """Simple counter that tracks a numeric position."""
+
+    def __init__(self, value: int = 0) -> None:
+        self.value = value
+
+    def increment(self) -> int:
+        """Increase the position by one and return the new value."""
+        self.value += 1
+        return self.value
+
+
+class RewriteSync:
+    """Track and validate whether user text and rewritten text are in sync."""
+
+    def __init__(self, app=None):
+        self.initial_input = ""
+        self.initial_output = ""
+        self.is_application_app = is_application_app(app)
+        if self.is_application_app:
+            self.initial_input = extract_text(app.user_textarea)
+            self.initial_output = extract_text(app.output_textarea)
+
+    def __bool__(self):
+        return self.is_application_app
+
+    def __len__(self):
+        return 1 if self.is_application_app else 0
+
+    def is_synced(self, app) -> bool:
+        """Return True if both input and output match the stored originals."""
+
+        if not is_application_app(app) or not self:
+            return False
+
+        current_in = extract_text(app.user_textarea)
+        current_out = extract_text(app.output_textarea)
+
+        return (
+            current_in.strip()
+            and current_out.strip()
+            and current_in == self.initial_input
+            and current_out == self.initial_output
+        )
+
+    def is_outdated(self, app) -> bool:
+        """Return True if input changed but output still matches the old rewrite."""
+        if not is_application_app(app) or not self:
+            return False
+
+        current_in = extract_text(app.user_textarea)
+        current_out = extract_text(app.output_textarea)
+
+        return (
+            current_in.strip()
+            and current_in != self.initial_input
+            and current_out == self.initial_output
+        )
+
+    def is_unrewritten(self, app) -> bool:
+        """Return True if user input exists but no rewritten text is present."""
+        if not is_application_app(app) or not self:
+            return False
+
+        current_in = extract_text(app.user_textarea).strip()
+        current_out = extract_text(app.output_textarea).strip()
+        return bool(current_in) and not current_out
+
+    def is_input_empty(self, app) -> bool:
+        """Return True if user input is empty."""
+        if not is_application_app(app) or not self:
+            return False
+        return len(extract_text(app.user_textarea).strip()) == 0
+
+
+def is_application_app(app):
+    return type(app).__name__ == "Application"
+
+
 def get_center_coordinates(
         parent: tk.Tk, child_width: int, child_height: int
 ) -> Tuple[int, int]:

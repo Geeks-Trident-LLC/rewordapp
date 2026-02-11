@@ -17,20 +17,9 @@ from rewordapp.ui import reditor
 from rewordapp.deps import genericlib_file_module as file
 
 from rewordapp.core import RewordBuilder
+from rewordapp.ui.helper import Position
 
 button_width = 5.5 if ui.is_macos else 8
-
-
-class Position:
-    """Simple counter that tracks a numeric position."""
-
-    def __init__(self, value: int = 0) -> None:
-        self.value = value
-
-    def increment(self) -> int:
-        """Increase the position by one and return the new value."""
-        self.value += 1
-        return self.value
 
 
 def build_controls_frame(parent, app) -> None:
@@ -214,6 +203,7 @@ def perform_reword(app) -> None:
         app.output_textarea.insert("1.0", builder.rewritten)
         app.output_textarea.config(state=ui.tk.DISABLED)
         app.rules_text = builder.rules.text
+        app.rewrite_sync = ui_helper.RewriteSync(app=app)
 
     else:
         ui_helper.show_message_dialog(

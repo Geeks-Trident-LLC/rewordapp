@@ -46,6 +46,8 @@ class Application:
 
         self.rules_text = ""
 
+        self.rewrite_sync = ui_helper.RewriteSync()
+
         # load icon logo
         ui_logo.set_window_icon(self.root)
 

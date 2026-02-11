@@ -20,24 +20,16 @@ import tkinter as tk
 def show_diff(app, mode):
     """Validate text state and open the appropriate diff dialog."""
 
-    # Extract normalized text
-    user_input = ui_helper.extract_text(app.user_textarea)
-    output = ui_helper.extract_text(app.output_textarea)
-
-    user_len = len(user_input)
-    out_len = len(output)
-
-    # Ready to compare: lengths match but content differs
-    if user_len == out_len and user_input != output:
+    if app.rewrite_sync.is_synced(app):
         show_dialog(app, mode)
         return
 
     # Build error message
     title = f"{mode.title()} View"
 
-    if out_len == 0 and user_len > 0:
+    if app.rewrite_sync.is_unrewritten(app):
         info = f"Cannot perform {mode} because there is no rewritten text."
-    elif user_len > 0 and user_len != out_len:
+    elif app.rewrite_sync.is_outdated(app):
         info = f"Cannot perform {mode} because the rewritten text is outdated."
     else:
         info = f"Cannot perform {mode} because the user input is empty."
