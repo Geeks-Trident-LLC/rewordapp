@@ -9,16 +9,18 @@ Core logic and shared utilities for RewordApp CE.
 
 from rewordapp.line import Line
 
+from rewordapp.rules import RewriteRules
+
 
 class RewordBuilder:
     """Builds rewritten text by transforming each line according to a rule."""
 
-    def __init__(self, text: str, rule: str = "") -> None:
+    def __init__(self, text: str, rules_text: str = "") -> None:
         self._text = str(text)
-        self._rule = rule
+        self.rules = RewriteRules(rules_text=rules_text)
 
         # Store as list so lines can be iterated multiple times
-        self._lines = [Line(line) for line in self._text.splitlines(keepends=True)]
+        self._lines = [Line(line, rules=self.rules) for line in self._text.splitlines(keepends=True)]
 
     @property
     def raw(self) -> str:
@@ -35,6 +37,8 @@ class RewordBuilder:
         """Return the transformed text after applying rewrite rules."""
         if self.line_count == 0:
             return ""
+
+        self.rules.refresh()
 
         parts = []
         for line in self._lines:

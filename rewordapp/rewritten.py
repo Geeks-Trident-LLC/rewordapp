@@ -16,6 +16,11 @@ import re
 import ipaddress
 
 
+def refresh() -> None:
+    """Refresh all character‑mapping tables."""
+    CharMapping.refresh()
+
+
 def shuffle_until_unique(origin, attempts=10):
     """Shuffle a list until no element remains in its original position."""
     shuffled = origin.copy()

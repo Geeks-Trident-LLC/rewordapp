@@ -44,7 +44,7 @@ class Application:
         self.output_frame = None        # frame containing the output textarea
         self.output_textarea = None
 
-        self.rules = ""
+        self.rules_text = ""
 
         # load icon logo
         ui_logo.set_window_icon(self.root)

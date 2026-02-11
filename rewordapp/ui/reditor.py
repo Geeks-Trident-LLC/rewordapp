@@ -77,8 +77,8 @@ def show(app):
     text = tk.Text(text_frame, wrap="none", font=Font(family="Courier", size=10))
     text.grid(row=0, column=0, sticky="nsew")
 
-    if app.rules.strip():
-        text.insert("1.0", app.rules)
+    if app.rules_text.strip():
+        text.insert("1.0", app.rules_text)
 
     vscroll = tk.Scrollbar(text_frame, orient="vertical", command=text.yview)
     vscroll.grid(row=0, column=1, sticky="ns")
@@ -96,8 +96,8 @@ def show(app):
         dialog.destroy()
 
     def on_save():
-        rules = ui_helper.extract_text(text)
-        app.rules = rules
+        rules_text = ui_helper.extract_text(text)
+        app.rules_text = rules_text
         dialog.destroy()
 
     ui.create_widget(

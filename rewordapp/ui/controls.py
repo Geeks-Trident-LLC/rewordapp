@@ -208,12 +208,12 @@ def perform_reword(app) -> None:
 
     # Check for any non‑whitespace content
     if len(re.sub(r"\s+", "", text)) > 0:
-        builder = RewordBuilder(text)
-
+        builder = RewordBuilder(text, rules_text=app.rules_text)
         app.output_textarea.config(state=ui.tk.NORMAL)
         app.output_textarea.delete("1.0", "end")
         app.output_textarea.insert("1.0", builder.rewritten)
         app.output_textarea.config(state=ui.tk.DISABLED)
+        app.rules_text = builder.rules.text
 
     else:
         ui_helper.show_message_dialog(

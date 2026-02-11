@@ -6,13 +6,15 @@ from rewordapp.urlparser import URLParser
 from rewordapp.numberparser import NumberParser
 from rewordapp.wordparser import WordParser
 
+from rewordapp.rules import RewriteRules
+
 
 class BaseToken:
     """Base class for text units that may match a specific token type."""
 
     def __init__(self, text: str, rules=None) -> None:
         self._text = text
-        self.rules = rules if isinstance(rules, dict) else {}
+        self.rules = rules if isinstance(rules, RewriteRules) else RewriteRules()
 
         self._masked = ""
         self._rewritten = ""
@@ -42,6 +44,10 @@ class BaseToken:
         return False
 
     @property
+    def class_name(self):
+        return self.__class__.__name__
+
+    @property
     def raw(self) -> str:
         """Return the original text."""
         return self._text
@@ -60,7 +66,23 @@ class BaseToken:
         if isinstance(self.parsed_node, str):
             return self.parsed_node
 
-        self._rewritten = self.parsed_node.generate_new().raw
+        has_rule = self.rules.has_rule_for(self)
+
+        if has_rule:
+            # Boolean rule: True → rewrite, False → keep original
+            if self.rules.has_boolean_rule(self):
+                if self.rules.get_rule_for(self):
+                    self._rewritten = self.parsed_node.generate_new().raw
+                else:
+                    self._rewritten = self.parsed_node.raw
+            else:
+                # Non-boolean rule → always rewrite
+                self._rewritten = self.parsed_node.generate_new().raw
+        else:
+            # No rule yet → rewrite and register rule
+            self._rewritten = self.parsed_node.generate_new().raw
+            self.rules.update_rule_for(self)
+
         return self._rewritten
 
     # --- Processing pipeline -------------------------------------------------
