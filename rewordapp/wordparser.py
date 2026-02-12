@@ -58,14 +58,15 @@ class WordParser:
 
     def _parse(self) -> None:
         """Parse word from raw text."""
+
         punc_pattern = f"[{re.escape(string.punctuation)}]"
-        pattern = rf"""(?ix)
+        pattern = rf"""(?ixu)
             (?P<prefix>{punc_pattern}+)?
-            (?P<word>\w+({punc_pattern}+\w+)*)
+            (?P<word>.*\w+.*)
             (?P<suffix>{punc_pattern}+)?
         """
 
-        match = re.match(pattern, self._text)
+        match = re.fullmatch(pattern, self._text)
         if not match:
             return
 
