@@ -124,6 +124,13 @@ def import_file_to_input(app) -> None:
         app.user_textarea.delete("1.0", "end")
         app.user_textarea.insert("1.0", content)
 
+        app.output_textarea.config(state=ui.tk.NORMAL)
+        app.output_textarea.delete("1.0", "end")
+        app.output_textarea.config(state=ui.tk.DISABLED)
+
+        app.rules_text = ""
+        app.rewrite_sync = ui_helper.RewriteSync()
+
     except Exception as ex:
         error = f"{type(ex).__name__}: {ex}"
         print(error)
@@ -174,6 +181,13 @@ def paste_from_clipboard(app) -> None:
         app.user_textarea.delete("1.0", "end")
         app.user_textarea.insert("1.0", data)
 
+        app.output_textarea.config(state=ui.tk.NORMAL)
+        app.output_textarea.delete("1.0", "end")
+        app.output_textarea.config(state=ui.tk.DISABLED)
+
+        app.rules_text = ""
+        app.rewrite_sync = ui_helper.RewriteSync()
+
     except Exception as ex:
         error = f"{type(ex).__name__}: {ex}"
         print(error)
@@ -189,6 +203,9 @@ def reset_textarea(app) -> None:
     app.output_textarea.config(state=ui.tk.NORMAL)
     app.output_textarea.delete("1.0", "end")
     app.output_textarea.config(state=ui.tk.DISABLED)
+
+    app.rules_text = ""
+    app.rewrite_sync = ui_helper.RewriteSync()
 
 
 def perform_reword(app) -> None:

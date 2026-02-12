@@ -5,7 +5,10 @@ rewordapp.ui.comparison
 Comparison dialog UI for original and rewritten text.
 """
 
+import re
+
 from rewordapp.ui import helper as ui_helper
+from rewordapp.core import RewordBuilder
 
 from tkinter.font import Font
 
@@ -74,19 +77,19 @@ def show(app):
     text_frame.grid_columnconfigure(0, weight=1)
     text_frame.grid_rowconfigure(0, weight=1)
 
-    text = tk.Text(text_frame, wrap="none", font=Font(family="Courier", size=10))
-    text.grid(row=0, column=0, sticky="nsew")
+    textarea = tk.Text(text_frame, wrap="none", font=Font(family="Courier", size=10))
+    textarea.grid(row=0, column=0, sticky="nsew")
 
     if app.rules_text.strip():
-        text.insert("1.0", app.rules_text)
+        textarea.insert("1.0", app.rules_text)
 
-    vscroll = tk.Scrollbar(text_frame, orient="vertical", command=text.yview)
+    vscroll = tk.Scrollbar(text_frame, orient="vertical", command=textarea.yview)
     vscroll.grid(row=0, column=1, sticky="ns")
 
-    hscroll = tk.Scrollbar(text_frame, orient="horizontal", command=text.xview)
+    hscroll = tk.Scrollbar(text_frame, orient="horizontal", command=textarea.xview)
     hscroll.grid(row=1, column=0, sticky="ew")
 
-    text.config(yscrollcommand=vscroll.set, xscrollcommand=hscroll.set)
+    textarea.config(yscrollcommand=vscroll.set, xscrollcommand=hscroll.set)
 
     # --- Footer buttons ---
     footer = tk.Frame(dialog)
@@ -96,8 +99,18 @@ def show(app):
         dialog.destroy()
 
     def on_save():
-        rules_text = ui_helper.extract_text(text)
-        app.rules_text = rules_text
+        # rules_text = ui_helper.extract_text(textarea)
+        app.rules_text = ui_helper.extract_text(textarea)
+
+        user_input = ui_helper.extract_text(app.user_textarea)
+        if len(re.sub(r"\s+", "", user_input)) > 0:
+            builder = RewordBuilder(user_input, rules_text=app.rules_text)
+            app.output_textarea.config(state=ui.tk.NORMAL)
+            app.output_textarea.delete("1.0", "end")
+            app.output_textarea.insert("1.0", builder.rewritten)
+            app.output_textarea.config(state=ui.tk.DISABLED)
+            app.rules_text = builder.rules.text
+            app.rewrite_sync = ui_helper.RewriteSync(app=app)
         dialog.destroy()
 
     ui.create_widget(
