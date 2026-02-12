@@ -4,6 +4,7 @@ rewordapp.ui.comparison
 
 Comparison dialog UI for original and rewritten text.
 """
+import re
 
 from rewordapp.ui import helper as ui_helper
 
@@ -143,63 +144,117 @@ def add_textarea(parent, mode, user_input, output):
 
 
 def add_interleave(parent, user_input, output):
-    """Create a Text widget with scrollbars and alternating styled lines."""
-
+    """Create a Text widget with scrollbars and interleaved diff-styled lines."""
     text = tk.Text(parent, wrap="none")
     text.grid(row=0, column=0, sticky="nsew")
 
-    # Vertical scrollbar
+    # Scrollbars
     vscroll = tk.Scrollbar(parent, orient="vertical", command=text.yview)
     vscroll.grid(row=0, column=1, sticky="ns")
     text.config(yscrollcommand=vscroll.set)
 
-    # Horizontal scrollbar
     hscroll = tk.Scrollbar(parent, orient="horizontal", command=text.xview)
     hscroll.grid(row=1, column=0, sticky="ew")
     text.config(xscrollcommand=hscroll.set)
 
-    # --- Define fonts ---
+    # Fonts
+    base_font = Font(family="Courier", size=10)
 
-    base = Font(name="TkDefaultFont", exists=True, root=text)
-    size = base.cget("size")
+    # Tags
+    text.tag_configure("similar_odd", font=base_font, foreground="black")
+    text.tag_configure("similar_even", font=base_font, foreground="#444444")
+    text.tag_configure("diff_odd", font=base_font, foreground="#cc0000")
+    text.tag_configure("diff_even", font=base_font, foreground="#22863A")
 
-    normal_font = Font(family="Courier", size=size)
-    blue_font = Font(family="Courier", size=size)
+    left_lines = user_input.splitlines(keepends=True)
+    right_lines = output.splitlines(keepends=True)
 
-    # --- Define tags ---
-    text.tag_configure("odd", font=normal_font, foreground="black")
-    text.tag_configure("even", font=blue_font, foreground="blue")
+    def insert_pair(odd, even):
+        """Insert a pair of lines with appropriate diff/similar tags."""
+        tag_ = "similar" if odd.strip() == even.strip() else "diff"
+        text.insert("end", odd, f"{tag_}_odd")
+        if not odd.endswith(("\n", "\r")):
+            text.insert("end", "\n", f"{tag_}_odd")
+        text.insert("end", even, f"{tag_}_even")
 
-    # --- Insert sample lines with alternating styles ---
+    for i, left_line in enumerate(left_lines):
+        right_line = right_lines[i] if i < len(right_lines) else ""
 
-    lines = user_input.splitlines(keepends=True)
-    other_lines = output.splitlines(keepends=True)
+        if not left_line.strip():
+            text.insert("end", left_line, "similar_odd")
+            continue
 
-    for index, odd_line in enumerate(lines):
-        even_line = other_lines[index] if index < len(other_lines) else ""
-        if odd_line.strip():
-            text.insert("end", odd_line, "odd")
-            if not odd_line.endswith(("\n", "\r")):
-                text.insert("end", "\n", "odd")
-            text.insert("end", even_line, "even")
-        else:
-            text.insert("end", odd_line, "odd")
+        # Simple case: whole-line compare OR no whitespace → treat as one token
+        if left_line.strip() == right_line.strip() or not re.search(r"\s", left_line):
+            insert_pair(left_line, right_line)
+            continue
+
+        # Token-level diff
+        left_tokens = split_by_matches(left_line)
+        right_tokens = split_by_matches(right_line)
+
+        # Odd side
+        for idx, token in enumerate(left_tokens):
+            other = right_tokens[idx] if idx < len(right_tokens) else ""
+            tag = "similar" if token == other else "diff"
+            text.insert("end", token, f"{tag}_odd")
+
+        if not left_line.endswith(("\n", "\r")):
+            text.insert("end", "\n", f"similar_odd")
+
+        # Even side
+        for idx, token in enumerate(right_tokens):
+            other = left_tokens[idx] if idx < len(left_tokens) else ""
+            tag = "similar" if token == other else "diff"
+            text.insert("end", token, f"{tag}_even")
 
     text.config(state="disabled")
 
 
 def add_side_by_side(parent, user_input, output):
-    """Display two synchronized text areas side by side."""
-    # --- Create two text widgets ---
+    """Display two synchronized text widgets for side‑by‑side comparison."""
     font = Font(family="Courier", size=10)
-    left = tk.Text(parent, font=font, wrap="none")
-    left.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
-    left.insert(tk.INSERT, user_input)
-    left.config(state="disabled")
 
-    right = tk.Text(parent, font=font, foreground="blue", wrap="none")
+    # --- Create text widgets ---
+    left = tk.Text(parent, font=font, wrap="none")
+    right = tk.Text(parent, font=font, wrap="none", foreground="blue")
+
+    left.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
     right.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
-    right.insert(tk.INSERT, output)
+
+    # --- Shared tag definitions ---
+    def configure_tags(widget):
+        widget.tag_configure("similar_left", font=font, foreground="black")
+        widget.tag_configure("similar_right", font=font, foreground="#444444")
+        widget.tag_configure("diff_left", font=font, foreground="#cc0000")
+        widget.tag_configure("diff_right", font=font, foreground="#22863A")
+
+    configure_tags(left)
+    configure_tags(right)
+
+    left_lines = user_input.splitlines(keepends=True)
+    right_lines = output.splitlines(keepends=True)
+
+    # --- Insert content ---
+    for i, l_line in enumerate(left_lines):
+        r_line = right_lines[i] if i < len(right_lines) else ""
+
+        if l_line.strip() == r_line.strip():
+            left.insert("end", l_line, "similar_left")
+            right.insert("end", l_line, "similar_right")
+            continue
+
+        # Token-level diff
+        l_tokens = split_by_matches(l_line)
+        r_tokens = split_by_matches(r_line)
+
+        for idx, l_tok in enumerate(l_tokens):
+            r_tok = r_tokens[idx] if idx < len(r_tokens) else ""
+            tag = "similar" if l_tok == r_tok else "diff"
+            left.insert("end", l_tok, f"{tag}_left")
+            right.insert("end", r_tok, f"{tag}_right")
+
+    left.config(state="disabled")
     right.config(state="disabled")
 
     # --- Shared scrollbars ---
@@ -209,10 +264,14 @@ def add_side_by_side(parent, user_input, output):
     vscroll.grid(row=0, column=2, sticky="ns")
     hscroll.grid(row=1, column=0, columnspan=2, sticky="ew")
 
-    # Sync vertical scrolling
+    # --- Scroll sync helpers ---
     def sync_y(*args):
         left.yview(*args)
         right.yview(*args)
+
+    def sync_x(*args):
+        left.xview(*args)
+        right.xview(*args)
 
     def on_left_y(*args):
         right.yview_moveto(args[0])
@@ -221,11 +280,6 @@ def add_side_by_side(parent, user_input, output):
     def on_right_y(*args):
         left.yview_moveto(args[0])
         vscroll.set(*args)
-
-    # Sync horizontal scrolling
-    def sync_x(*args):
-        left.xview(*args)
-        right.xview(*args)
 
     def on_left_x(*args):
         right.xview_moveto(args[0])
@@ -245,17 +299,49 @@ def add_side_by_side(parent, user_input, output):
 
 
 def add_stack(parent, user_input, output):
-    """Display two synchronized text areas top-down layout."""
-    # --- Create two text widgets ---
+    """Display two synchronized text widgets in a vertical (stacked) layout."""
     font = Font(family="Courier", size=10)
-    top = tk.Text(parent, font=font, wrap="none")
-    top.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
-    top.insert(tk.INSERT, user_input)
-    top.config(state="disabled")
 
-    bottom = tk.Text(parent, font=font, foreground="blue", wrap="none")
+    # --- Create text widgets ---
+    top = tk.Text(parent, font=font, wrap="none")
+    bottom = tk.Text(parent, font=font, wrap="none", foreground="blue")
+
+    top.grid(row=0, column=0, sticky="nsew", pady=(0, 4))
     bottom.grid(row=1, column=0, sticky="nsew", pady=(4, 0))
-    bottom.insert(tk.INSERT, output)
+
+    # --- Shared tag configuration ---
+    def configure_tags(widget):
+        widget.tag_configure("similar_top", font=font, foreground="black")
+        widget.tag_configure("similar_bottom", font=font, foreground="#444444")
+        widget.tag_configure("diff_top", font=font, foreground="#cc0000")
+        widget.tag_configure("diff_bottom", font=font, foreground="#22863A")
+
+    configure_tags(top)
+    configure_tags(bottom)
+
+    top_lines = user_input.splitlines(keepends=True)
+    bottom_lines = output.splitlines(keepends=True)
+
+    # --- Insert content ---
+    for i, t_line in enumerate(top_lines):
+        b_line = bottom_lines[i] if i < len(bottom_lines) else ""
+
+        if t_line.strip() == b_line.strip():
+            top.insert("end", t_line, "similar_top")
+            bottom.insert("end", t_line, "similar_bottom")
+            continue
+
+        # Token-level diff
+        t_tokens = split_by_matches(t_line)
+        b_tokens = split_by_matches(b_line)
+
+        for idx, t_tok in enumerate(t_tokens):
+            b_tok = b_tokens[idx] if idx < len(b_tokens) else ""
+            tag = "similar" if t_tok == b_tok else "diff"
+            top.insert("end", t_tok, f"{tag}_top")
+            bottom.insert("end", b_tok, f"{tag}_bottom")
+
+    top.config(state="disabled")
     bottom.config(state="disabled")
 
     # --- Shared scrollbars ---
@@ -265,10 +351,14 @@ def add_stack(parent, user_input, output):
     vscroll.grid(row=0, column=1, rowspan=2, sticky="ns")
     hscroll.grid(row=2, column=0, sticky="ew")
 
-    # --- Vertical sync ---
+    # --- Scroll sync helpers ---
     def sync_y(*args):
         top.yview(*args)
         bottom.yview(*args)
+
+    def sync_x(*args):
+        top.xview(*args)
+        bottom.xview(*args)
 
     def on_top_y(*args):
         bottom.yview_moveto(args[0])
@@ -277,11 +367,6 @@ def add_stack(parent, user_input, output):
     def on_bottom_y(*args):
         top.yview_moveto(args[0])
         vscroll.set(*args)
-
-    # --- Horizontal sync ---
-    def sync_x(*args):
-        top.xview(*args)
-        bottom.xview(*args)
 
     def on_top_x(*args):
         bottom.xview_moveto(args[0])
@@ -298,3 +383,20 @@ def add_stack(parent, user_input, output):
     # Connect text widgets
     top.config(yscrollcommand=on_top_y, xscrollcommand=on_top_x)
     bottom.config(yscrollcommand=on_bottom_y, xscrollcommand=on_bottom_x)
+
+
+def split_by_matches(text, pattern=r"\s+"):
+    """Split text into alternating segments of non-matching and matching substrings."""
+    parts = []
+    last_end = 0
+
+    for m in re.finditer(pattern, text):
+        if m.start() > last_end:
+            parts.append(text[last_end:m.start()])
+        parts.append(m.group())
+        last_end = m.end()
+
+    if last_end < len(text):
+        parts.append(text[last_end:])
+
+    return parts
