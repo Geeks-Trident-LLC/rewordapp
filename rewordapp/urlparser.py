@@ -94,13 +94,13 @@ class URLParser:
                 (?:(?P<user>[^:@]+(?::[^@]+)?@))?               # user
                 (?P<host>([a-z][a-z0-9-]+[.])+[a-z][a-z0-9-]+)  # host
                 (?::(?P<port>\d+))?                             # port
-                (?P<path>/[^\s?#]*)?                            # path
-                (?:(?P<query>\?[^\s#]*))?                       # query
-                (?:(?P<fragment>\#[^\s]*))?                     # fragment
+                (?P<path>/[a-z0-9_./]+)?                        # path
+                (?:(?P<query>\?[a-z0-9_.=&]+))?                 # query
+                (?:(?P<fragment>\#[a-z0-9_.%]+))?               # fragment
             )
         """
 
-        match = re.match(pattern, self._text)
+        match = re.fullmatch(pattern, self._text)
         if not match:
             return
 
