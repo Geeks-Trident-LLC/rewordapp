@@ -42,7 +42,7 @@ def add_help_menu(parent: ui.Menu, app: Any) -> ui.Menu:
     )
     help_menu.add_command(
         label="View Licenses",
-        command=lambda: ui_helper.open_app_resource("license"),
+        command=lambda: ui_helper.open_app_resource("license_text"),
     )
     help_menu.add_separator()
     help_menu.add_command(label="About", command=app.show_about_dialog)

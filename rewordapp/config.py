@@ -45,7 +45,7 @@ license_url = path.join(repo_url, 'blob/develop/LICENSE')
 years = '2021-2040'
 license_name = 'RewordApp License'
 copyright_text = 'Copyright @ {}'.format(years)
-license = dedent_and_strip(
+license_text = dedent_and_strip(
     """
     BSD 3-Clause License
 

@@ -82,7 +82,7 @@ class Application:
 
     def show_about_dialog(self) -> None:
         """Display the About dialog with panels for app info,
-        repository, dependencies, and license."""
+        repository, dependencies, and license_text."""
         about = ui_about.create_window(self.root)
 
         # load icon logo

@@ -103,7 +103,7 @@ def add_license_panel(
     width: int = 450,
     height: int = 200
 ) -> None:
-    """Create a scrollable license panel and add it to the given container."""
+    """Create a scrollable license_text panel and add it to the given container."""
 
     label_frame = ui.LabelFrame(
         parent, height=height, width=width, text=config.license_name
@@ -121,7 +121,7 @@ def add_license_panel(
     scrollbar.grid(row=0, column=1, sticky="nsew")
 
     text_area.config(yscrollcommand=scrollbar.set)
-    text_area.insert(tk.INSERT, config.license)
+    text_area.insert(tk.INSERT, config.license_text)
 
     text_area.config(state="disabled")
 

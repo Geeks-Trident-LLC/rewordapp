@@ -77,10 +77,10 @@ class TestData:
         assert config.license_url.endswith("LICENSE")
 
     def test_license_info(self):
-        """Check license info."""
+        """Check license_text info."""
         assert "RewordApp License" in config.license_name
         assert "2021-2040" in config.copyright_text
-        assert isinstance(config.license, str)
+        assert isinstance(config.license_text, str)
 
     @pytest.mark.parametrize(
         "pkg",

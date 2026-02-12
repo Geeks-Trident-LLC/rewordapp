@@ -337,10 +337,10 @@ def open_app_resource(resource: str) -> None:
     Parameters
     ----------
     resource : str
-        The resource key to open. Supported values: "license", "documentation".
+        The resource key to open. Supported values: "license_text", "documentation".
     """
     resources = {
-        "license": config.license_url,
+        "license_text": config.license_url,
         "documentation": config.documentation_url,
     }
     url = resources.get(resource)
