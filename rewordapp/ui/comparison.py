@@ -17,6 +17,8 @@ import rewordapp.config as config
 
 import tkinter as tk
 
+from rewordapp.utils import split_by_matches
+
 
 def show_diff(app, mode):
     """Validate text state and open the appropriate diff dialog."""
@@ -383,20 +385,3 @@ def add_stack(parent, user_input, output):
     # Connect text widgets
     top.config(yscrollcommand=on_top_y, xscrollcommand=on_top_x)
     bottom.config(yscrollcommand=on_bottom_y, xscrollcommand=on_bottom_x)
-
-
-def split_by_matches(text, pattern=r"\s+"):
-    """Split text into alternating segments of non-matching and matching substrings."""
-    parts = []
-    last_end = 0
-
-    for m in re.finditer(pattern, text):
-        if m.start() > last_end:
-            parts.append(text[last_end:m.start()])
-        parts.append(m.group())
-        last_end = m.end()
-
-    if last_end < len(text):
-        parts.append(text[last_end:])
-
-    return parts
