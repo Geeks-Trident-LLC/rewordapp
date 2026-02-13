@@ -5,6 +5,7 @@ from rewordapp.netparser import IPv4Parser, IPv6Parser, MACParser
 from rewordapp.urlparser import URLParser
 from rewordapp.numberparser import NumberParser
 from rewordapp.wordparser import WordParser
+from rewordapp.fpparser import FilePermissionParser
 
 from rewordapp.rules import RewriteRules
 
@@ -180,9 +181,16 @@ class WordToken(BaseToken):
         self._update_parsed_node(WordParser)
 
 
+class FilePermissionToken(BaseToken):
+    """Token representing a file permission."""
+    def _detect(self) -> None:
+        self._update_parsed_node(FilePermissionParser)
+
+
 def build_token(text: str, rules: dict | None = None):
     """Return the first token type that matches the given text."""
     token_types = [
+        FilePermissionToken,
         URLToken,
         MACToken,
         IPv6Token,

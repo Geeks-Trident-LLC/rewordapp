@@ -90,6 +90,8 @@ class CharMapping:
     fraction_number = build_char_map(*digits_set)
     alphanumeric = build_char_map(*alphanumeric_set)
     octal = build_char_map(digits[:1], digits[1:-2])
+    file_permission = build_char_map(digits[:8])
+    win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
 
     # URL‑specific mappings
     url_user = build_char_map(*alphanumeric_set)
@@ -138,6 +140,9 @@ class CharMapping:
         cls.base_number = build_char_map(*cls.digits_set)
         cls.fraction_number = build_char_map(*cls.digits_set)
         cls.alphanumeric = build_char_map(*cls.alphanumeric_set)
+        cls.octal = build_char_map(digits[:1], digits[1:-2])
+        cls.file_permission = build_char_map(digits[:8])
+        win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
 
         # URL‑specific mappings
         cls.url_user = build_char_map(*cls.alphanumeric_set)
@@ -409,3 +414,38 @@ def new_ipv6_address(address: str) -> str:
 
     compressed = ipaddress.ip_address(":".join(rewritten)).compressed
     return compressed.upper() if is_uppercase else compressed
+
+
+def new_fperm(perm: str) -> str:
+    """Rewrite owner/group/other permission bits using mapped patterns."""
+    def remap(bits: str) -> str:
+        original = bits
+        value = int("".join("0" if c == "-" else "1" for c in bits), 2)
+        new_value = int(CharMapping.file_permission.get(str(value), str(value)))
+
+        mapping = "rwx"
+        parts = [
+            "-" if b == "0" else mapping[i]
+            for i, b in enumerate(format(new_value, "03b"))
+        ]
+
+        # Preserve special characters (s, S, t, T, etc.)
+        for i, ch in enumerate(original):
+            if ch not in "rwx-":
+                parts[i] = ch
+
+        return "".join(parts)
+
+    if len(perm) >= 10:
+        # Skip rewriting if no permission bits are set
+        if perm[1:10] == "-" * 9:
+            return perm
+
+        file_type = perm[0]
+        owner = remap(perm[1:4])
+        group = remap(perm[4:7])
+        other = remap(perm[7:10])
+        extended = perm[10:]
+        return f"{file_type}{owner}{group}{other}{extended}"
+
+    return "".join(CharMapping.win_file_mode.get(c, c) for c in perm)

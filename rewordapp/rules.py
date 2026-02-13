@@ -23,6 +23,7 @@ class RewriteRules(dict):
     """Dictionary-like container for rewrite rules loaded from YAML."""
 
     token_to_rule = {
+        "FilePermissionToken": "rewrite_file_permission",
         "IPv4Token": "rewrite_ipv4",
         "IPv6Token": "rewrite_ipv6",
         "MACAddressToken": "rewrite_mac",
