@@ -15,6 +15,9 @@ import random
 import re
 import ipaddress
 
+from rewordapp import utils
+from rewordapp.fext import has_known_extension
+
 
 def refresh() -> None:
     """Refresh all character‑mapping tables."""
@@ -78,11 +81,14 @@ class CharMapping:
     """Container for randomized character‑substitution maps used for rewriting text."""
 
     # Base character groups
-    letters_set = (ascii_lowercase, ascii_uppercase)
+    letters_set = (
+        "ae", "bcdf", "iou", "y","ghjklmnpqrstvwxz",
+        "AE", "BCDF", "IOU", "Y","GHJKLMNPQRSTVWXZ"
+    )
     first_digit = random.choice(digits[1:])
     digits_set = (digits[:1], digits[1:])
     hex_set = (ascii_lowercase[:6], ascii_uppercase[:6], *digits_set)
-    alphanumeric_set = (*hex_set, ascii_lowercase[6:], ascii_uppercase[6:])
+    alphanumeric_set = (*letters_set, *digits_set)
 
     # General mappings
     letters = build_char_map(*letters_set)
@@ -142,7 +148,7 @@ class CharMapping:
         cls.alphanumeric = build_char_map(*cls.alphanumeric_set)
         cls.octal = build_char_map(digits[:1], digits[1:-2])
         cls.file_permission = build_char_map(digits[:8])
-        win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
+        cls.win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
 
         # URL‑specific mappings
         cls.url_user = build_char_map(*cls.alphanumeric_set)
@@ -214,28 +220,26 @@ def new_word(text: str) -> str:
             return CharMapping.letters
         return CharMapping.alphanumeric
 
-    punct_pattern = f"[{re.escape(string.punctuation)}]+"
+    punct_pattern = f"[{re.escape(string.punctuation)}]"
 
-    # If punctuation appears, rewrite only the non‑punctuation segments
-    if re.search(punct_pattern, text):
-        parts = []
-        start = 0
-        match = None
+    ext_pattern = rf'''(?ixu)
+            [^\\/:*?"><|][.]
+            (?P<last>(?P<ext>[a-z0-9][a-z0-9_-]*)
+            {punct_pattern}*)$
+        '''
+    first = text
+    last = ""
+    match = re.search(ext_pattern, text)
+    if match:
+        ext = match.group("ext")
+        if has_known_extension(ext):
+            last = match.group("last")
+            first = text[:-len(last)]
 
-        for match in re.finditer(punct_pattern, text):
-            before = text[start:match.start()]
-            parts.append(apply_mapping(before, select_mapping(before)))
-            parts.append(match.group())     # keep punctuation unchanged
-            start = match.end()
-
-        if match:
-            after = text[match.end():]
-            parts.append(apply_mapping(after, select_mapping(after)))
-
-        return "".join(parts)
-
-    # No punctuation → rewrite whole word
-    return apply_mapping(text, select_mapping(text))
+    parts = []
+    for item in utils.split_by_matches(first, f"{punct_pattern}+"):
+        parts.append(apply_mapping(item, select_mapping(item)))
+    return "".join(parts) + last
 
 
 def new_url(user="", host="", path="", query="", fragment=""):

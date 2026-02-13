@@ -925,8 +925,8 @@ def check(ext: str) -> bool:
     return False
 
 
-def has_known_extension(filename):
-    if not "." in filename:
-        return False
-    _, ext = filename.rsplit(".", 1)
-    return check(ext)
+def has_known_extension(fn_or_ext: str) -> bool:
+    if "." in fn_or_ext:
+        _, ext = fn_or_ext.rsplit(".", 1)
+        return check(ext)
+    return check(fn_or_ext)
