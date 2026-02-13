@@ -11,6 +11,8 @@ import re
 import rewordapp.rewritten as rewritten
 from rewordapp.deps import genericlib_DotObject as DotObject
 
+import rewordapp.fext as fext
+
 
 class URLParser:
     """Parse a MAC address and expose its components."""
@@ -102,6 +104,9 @@ class URLParser:
 
         match = re.fullmatch(pattern, self._text)
         if not match:
+            return
+
+        if fext.has_known_extension(match.group("host")):
             return
 
         self._prefix = self._text[:match.start()] or ""
