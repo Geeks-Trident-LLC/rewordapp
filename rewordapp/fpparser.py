@@ -83,5 +83,5 @@ class FilePermissionParser:
         if not self:
             return self.__class__(self.raw)
 
-        new_file_permission = rewritten.new_fperm(self.file_permission)
+        new_file_permission = rewritten.new_file_permission(self.file_permission)
         return self.__class__(new_file_permission)

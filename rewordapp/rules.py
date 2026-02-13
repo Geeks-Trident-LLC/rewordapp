@@ -2,7 +2,7 @@
 
 import yaml
 
-from rewordapp import rewritten
+from rewordapp import rewritten, mapping
 import rewordapp.exceptions as exceptions
 
 
@@ -86,4 +86,4 @@ class RewriteRules(dict):
     def refresh(self):
         """Refresh rewritten output if auto-rewrite is enabled."""
         if self.get("rewrite_on_each_generate", False):
-           rewritten.refresh()
+           mapping.refresh()

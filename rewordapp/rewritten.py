@@ -8,217 +8,25 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 """
 
 import string
-from string import ascii_lowercase
-from string import ascii_uppercase
-from string import digits
-import random
 import re
 import ipaddress
 
 from rewordapp import utils
 from rewordapp.fext import has_known_extension
-
-
-def refresh() -> None:
-    """Refresh all character‑mapping tables."""
-    CharMapping.refresh()
-
-
-def shuffle_until_unique(origin, attempts=10):
-    """Shuffle a list until no element remains in its original position."""
-    shuffled = origin.copy()
-
-    for _ in range(attempts):
-        random.shuffle(shuffled)
-
-        # A position is allowed to match only if the value is zero-like ("0", "00", etc.)
-        if all(
-            str(item).strip("0") == "" or str(item) != str(origin[i])
-            for i, item in enumerate(shuffled)
-        ):
-            return shuffled
-
-    # Fallback: return a final shuffle even if a full derangement wasn't achieved
-    random.shuffle(shuffled)
-    return shuffled
-
-
-def build_char_map(*charsets):
-    """Return a randomized one‑to‑one mapping for the given character sets."""
-    mapping = {}
-
-    for charset in charsets:
-        chars = list(charset)
-        mapping.update(zip(chars, shuffle_until_unique(chars)))
-
-    return mapping
-
-
-def build_ipv4_octet_map() -> dict[str, str]:
-    """Build a shuffled mapping for IPv4 octet values from 0–255."""
-    mapping = {"0": "0"}  # zero stays fixed
-
-    start = 1
-    ranges = [10, 100, 200, 256]
-
-    for stop in ranges:
-        original = [str(n) for n in range(start, stop)]
-        mapping.update(zip(original, shuffle_until_unique(original)))
-        start = stop
-
-    return mapping
-
-
-def generate_random_binary(source):
-    """Return a zero‑padded binary string with the same length as the source."""
-    width = len(source)
-    value = random.randrange(2 ** width)
-    return format(value, f"0{width}b")
-
-
-
-class CharMapping:
-    """Container for randomized character‑substitution maps used for rewriting text."""
-
-    # Base character groups
-    letters_set = (
-        "ae", "bcdf", "iou", "y","ghjklmnpqrstvwxz",
-        "AE", "BCDF", "IOU", "Y","GHJKLMNPQRSTVWXZ"
-    )
-    first_digit = random.choice(digits[1:])
-    digits_set = (digits[:1], digits[1:])
-    hex_set = (ascii_lowercase[:6], ascii_uppercase[:6], *digits_set)
-    alphanumeric_set = (*letters_set, *digits_set)
-
-    # General mappings
-    letters = build_char_map(*letters_set)
-    base_number = build_char_map(*digits_set)
-    fraction_number = build_char_map(*digits_set)
-    alphanumeric = build_char_map(*alphanumeric_set)
-    octal = build_char_map(digits[:1], digits[1:-2])
-    file_permission = build_char_map(digits[:8])
-    win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
-
-    # URL‑specific mappings
-    url_user = build_char_map(*alphanumeric_set)
-    url_host = build_char_map(*alphanumeric_set)
-    url_path = build_char_map(*alphanumeric_set)
-    url_query = build_char_map(*alphanumeric_set)
-    url_fragment = build_char_map(*alphanumeric_set)
-
-    # MAC address mapping
-    mac = (
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-    )
-
-    # IPv4 address mapping
-    ipv4 = (
-        build_ipv4_octet_map(),
-        build_ipv4_octet_map(),
-        build_ipv4_octet_map(),
-        build_ipv4_octet_map()
-    )
-
-    # IPv6 address mapping
-    ipv6 = (
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set),
-        build_char_map(*hex_set)
-    )
-
-    @classmethod
-    def refresh(cls):
-        """Regenerate all character‑mapping tables."""
-
-        cls.first_digit = random.choice("123456789")
-        # General mappings
-        cls.letters = build_char_map(*cls.letters_set)
-        cls.base_number = build_char_map(*cls.digits_set)
-        cls.fraction_number = build_char_map(*cls.digits_set)
-        cls.alphanumeric = build_char_map(*cls.alphanumeric_set)
-        cls.octal = build_char_map(digits[:1], digits[1:-2])
-        cls.file_permission = build_char_map(digits[:8])
-        cls.win_file_mode = build_char_map("-", "d", "D", "ahilrs", "AHILRS")
-
-        # URL‑specific mappings
-        cls.url_user = build_char_map(*cls.alphanumeric_set)
-        cls.url_host = build_char_map(*cls.alphanumeric_set)
-        cls.url_path = build_char_map(*cls.alphanumeric_set)
-        cls.url_query = build_char_map(*cls.alphanumeric_set)
-        cls.url_fragment = build_char_map(*cls.alphanumeric_set)
-
-        # MAC address mapping
-        cls.mac = (
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set)
-        )
-
-        # IPv4 address mapping
-        cls.ipv4 = (
-            build_ipv4_octet_map(),
-            build_ipv4_octet_map(),
-            build_ipv4_octet_map(),
-            build_ipv4_octet_map()
-        )
-
-        # IPv6 address mapping
-        cls.ipv6 = (
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set),
-            build_char_map(*cls.hex_set)
-        )
-
-
-def apply_mapping(text: str, mapping: dict[str, str]) -> str:
-    """Rewrite a string by applying character mappings, with special handling for hex, binary, and octal prefixes."""
-    # Hexadecimal: 0xNN...
-    if re.fullmatch(r"(?i)0x[a-f0-9]+", text):
-        return text[:2] + "".join(mapping.get(ch, ch) for ch in text[2:])
-
-    # Binary: 0bNN...
-    if re.fullmatch(r"(?i)0b[01]+", text):
-        return text[:2] + generate_random_binary(text[2:])
-
-    # Octal: 0oNN... or 0NN...
-    if re.fullmatch(r"(?i)0o?[0-7]+", text):
-        prefix_len = 2 if "o" in text.lower() else 1
-        return text[:prefix_len] + "".join(
-            CharMapping.octal.get(ch, ch) for ch in text[prefix_len:]
-        )
-
-    # Default: apply generic mapping
-    return "".join(mapping.get(ch, ch) for ch in text)
+from rewordapp.mapping import generate_random_binary, Mapping, apply_mapping
 
 
 def new_word(text: str) -> str:
-    """Rewrite a word while preserving punctuation and applying the appropriate character mapping."""
+    """Rewrite a word while preserving punctuation and applying
+    the appropriate character mapping."""
     if not text.strip():
         return text
 
     # Choose mapping based on whether the segment is pure letters
     def select_mapping(segment: str):
         if re.fullmatch(r"[A-Za-z]", segment):
-            return CharMapping.letters
-        return CharMapping.alphanumeric
+            return Mapping.letters
+        return Mapping.alphanumeric
 
     punct_pattern = f"[{re.escape(string.punctuation)}]"
 
@@ -246,33 +54,33 @@ def new_url(user="", host="", path="", query="", fragment=""):
     """Rewrite a single URL component using the appropriate character mapping."""
     # User component
     if user:
-        return apply_mapping(user, CharMapping.url_user)
+        return apply_mapping(user, Mapping.url.user)
 
     # Host component (preserve TLD)
     if host:
         if host.count(".") == 0:
-            return apply_mapping(host, CharMapping.url_host)
+            return apply_mapping(host, Mapping.url.host)
 
         if host.count(".") == 1:
             domain, tld = host.rsplit(".", maxsplit=1)
-            rewritten = apply_mapping(domain, CharMapping.url_host)
+            rewritten = apply_mapping(domain, Mapping.url.host)
             return f"{rewritten}.{tld}"
         subdomain, *other, tld = host.split(".")
-        rewritten = apply_mapping(".".join(other), CharMapping.url_host)
+        rewritten = apply_mapping(".".join(other), Mapping.url.host)
         if re.fullmatch(r"(?i)[a-z][a-z0-9]+", subdomain):
             return f"{subdomain}.{rewritten}.{tld}"
 
-        rewritten_subdomain = apply_mapping(subdomain, CharMapping.url_host)
+        rewritten_subdomain = apply_mapping(subdomain, Mapping.url.host)
         return f"{rewritten_subdomain}.{rewritten}.{tld}"
 
 
     # Determine which component is present
     if path:
-        data, mapping = path, CharMapping.url_path
+        data, mapping = path, Mapping.url.path
     elif query:
-        data, mapping = query, CharMapping.url_query
+        data, mapping = query, Mapping.url.query
     elif fragment:
-        data, mapping = fragment, CharMapping.url_fragment
+        data, mapping = fragment, Mapping.url.fragment
     else:
         return ""
 
@@ -316,16 +124,16 @@ def new_number(text: str) -> str:
 
         # Preserve literal zeros instead of mapping them
         new_base = base if (base.isdigit() and int(base) == 0) \
-            else apply_mapping(base, CharMapping.base_number)
+            else apply_mapping(base, Mapping.base_number)
 
         new_fraction = fraction if (fraction.isdigit() and int(fraction) == 0) \
-            else apply_mapping(fraction, CharMapping.fraction_number)
+            else apply_mapping(fraction, Mapping.fraction_number)
 
         rewritten = f"{new_base}.{new_fraction}"
 
         # Avoid leading zero in multi‑digit results
         if re.match(r"0[0-9]", rewritten):
-            return f"{CharMapping.first_digit}{rewritten[1:]}"
+            return f"{Mapping.first_digit}{rewritten[1:]}"
 
         return rewritten
 
@@ -335,12 +143,12 @@ def new_number(text: str) -> str:
 
     # octal
     if re.fullmatch("0[0-7]+", text):
-        return apply_mapping(text, CharMapping.octal)
+        return apply_mapping(text, Mapping.octal)
 
     # generic integer
-    rewritten = apply_mapping(text, CharMapping.base_number)
+    rewritten = apply_mapping(text, Mapping.base_number)
     if re.match(r"0[0-9]", rewritten):
-        return f"{CharMapping.first_digit}{rewritten[1:]}"
+        return f"{Mapping.first_digit}{rewritten[1:]}"
 
     return rewritten
 
@@ -369,7 +177,7 @@ def new_mac_address(address: str) -> str:
     rewritten = octets[:midpoint]
 
     for idx, octet in enumerate(octets[midpoint:]):
-        mapped = apply_mapping(octet, CharMapping.mac[idx % 6])
+        mapped = apply_mapping(octet, Mapping.mac_octet)
         rewritten.append(mapped)
 
     return sep.join(rewritten)
@@ -381,10 +189,16 @@ def new_ipv4_address(address: str) -> str:
     if len(octets) != 4:
         return address
 
+    first_octet = octets[0]
     new_octets = []
-    for idx, octet in enumerate(octets):
-        new_octet = octet if idx == 0 else CharMapping.ipv4[idx].get(octet, octet)
-        new_octets.append(new_octet)
+    if all(octet == first_octet for octet in octets):
+        new_octets = [Mapping.ipv4_octet.get(first_octet, first_octet)] * 4
+    else:
+        for idx, octet in enumerate(octets):
+            if idx == 0 or octet == first_octet:
+                new_octets.append(first_octet)
+            else:
+                new_octets.append(Mapping.ipv4_octet.get(octet, octet))
     return ".".join(new_octets)
 
 
@@ -408,7 +222,7 @@ def new_ipv6_address(address: str) -> str:
 
     for index, group in enumerate(groups):
         if rewrite_started:
-            mapped = apply_mapping(group, CharMapping.ipv6[index])
+            mapped = apply_mapping(group, Mapping.ipv6_octet)
             rewritten.append(mapped)
         else:
             rewritten.append(group)
@@ -420,12 +234,12 @@ def new_ipv6_address(address: str) -> str:
     return compressed.upper() if is_uppercase else compressed
 
 
-def new_fperm(perm: str) -> str:
+def new_file_permission(perm: str) -> str:
     """Rewrite owner/group/other permission bits using mapped patterns."""
     def remap(bits: str) -> str:
         original = bits
         value = int("".join("0" if c == "-" else "1" for c in bits), 2)
-        new_value = int(CharMapping.file_permission.get(str(value), str(value)))
+        new_value = int(Mapping.file_permission.get(str(value), str(value)))
 
         mapping = "rwx"
         parts = [
@@ -452,4 +266,4 @@ def new_fperm(perm: str) -> str:
         extended = perm[10:]
         return f"{file_type}{owner}{group}{other}{extended}"
 
-    return "".join(CharMapping.win_file_mode.get(c, c) for c in perm)
+    return "".join(Mapping.win_file_mode.get(c, c) for c in perm)
