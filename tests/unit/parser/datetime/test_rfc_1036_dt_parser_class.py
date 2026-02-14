@@ -1,31 +1,31 @@
 """
-Unit tests for the `rewordapp.parser.datetime.RFC850DTParser` class.
+Unit tests for the `rewordapp.parser.datetime.RFC1036DTParser` class.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/parser/datetime/test_rfc_850_dt_parser_class.py
+    $ pytest tests/unit/parser/datetime/test_rfc_1036_dt_parser_class.py
     or
-    $ python -m pytest tests/unit/parser/datetime/test_rfc_850_dt_parser_class.py
+    $ python -m pytest tests/unit/parser/datetime/test_rfc_1036_dt_parser_class.py
 """
 
 import pytest
 from datetime import datetime
 
-from rewordapp.parser.datetime import RFC850DTParser
+from rewordapp.parser.datetime import RFC1036DTParser
 
 
 @pytest.mark.parametrize(
     "text, pattern",
     [
-        ("Saturday, 07-Feb-26 12:57:36 GMT", "%A, %d-%b-%y %H:%M:%S GMT"),
+        ("Sat, 07 Feb 2026 12:57:36 GMT", "%a, %d %b %Y %H:%M:%S GMT"),
     ],
 )
 def test_rfc850_parsing(text, pattern):
-    """Ensure RFC850 parser rewrites datetime to an earlier value."""
-    parser = RFC850DTParser(text)
+    """Ensure RFC1036 parser rewrites datetime to an earlier value."""
+    parser = RFC1036DTParser(text)
 
-    assert parser, f"Failed to parse RFC850 datetime: {text}"
+    assert parser, f"Failed to parse RFC1036 datetime: {text}"
 
     rewritten = parser.rewritten
 

@@ -216,3 +216,20 @@ class RFC850DTParser(BaseDTParser):
                 raw_parts = utils.split_by_matches(self._raw_text)[-2:]
                 self._output_format = "".join(fmt_parts + raw_parts)
                 return
+
+
+class RFC1036DTParser(BaseDTParser):
+    """Parse RFC 1036–style datetime strings."""
+
+    def _parse(self):
+        patterns = [
+            "%a, %d %b %Y %H:%M:%S %Z",
+        ]
+
+        for pattern in patterns:
+            if self.try_parse_with(pattern):
+                # Reconstruct output format by merging tokens from pattern + raw text
+                fmt_parts = utils.split_by_matches(pattern)[:-2]
+                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
+                self._output_format = "".join(fmt_parts + raw_parts)
+                return
