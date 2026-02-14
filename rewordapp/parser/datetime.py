@@ -286,3 +286,38 @@ class RFC3339DTParser(BaseDTParser):
                 # Reconstruct output format by merging tokens from pattern + raw text
                 self._output_format = pattern[:17] + self._raw_text[19:]
                 return
+
+
+class RFC7231DTParser(BaseDTParser):
+    """Parse RFC 7231–style datetime strings."""
+
+    @property
+    def rewritten(self) -> str:
+        """Return rewritten datetime string with RFC 1123 asctime() spacing fix."""
+        result = super().rewritten
+
+        # Fix asctime() day spacing: "Feb 07" → "Feb  7"
+        if self._output_format == "%a %b %d %H:%M:%S %Y":
+            # If the day is zero‑padded, replace " 0" with "  "
+            # Example: "Sat Feb 07 12:57:36 2026" → "Sat Feb  7 12:57:36 2026"
+            if len(result) > 8 and result[8] == "0":
+                return result[:8] + " " + result[9:]
+
+        return result
+
+    def _parse(self):
+        patterns = [
+            "%a, %d %b %Y %H:%M:%S %Z",
+            "%A, %d-%b-%y %H:%M:%S %Z",
+            "%a %b %d %H:%M:%S %Y"
+        ]
+        for pattern in patterns:
+            if self.try_parse_with(pattern):
+                # Reconstruct output format by merging tokens from pattern + raw text
+                if "%Z" in pattern:
+                    fmt_parts = utils.split_by_matches(pattern)[:-2]
+                    raw_parts = utils.split_by_matches(self._raw_text)[-2:]
+                    self._output_format = "".join(fmt_parts + raw_parts)
+                    return
+                self._output_format = pattern
+                return
