@@ -22,7 +22,7 @@ from rewordapp.parser.datetime import RFC1123DTParser
     ],
 )
 def test_rfc1123_parsing(text, pattern):
-    """Ensure RFC1036 parser rewrites datetime to an earlier value."""
+    """Ensure RFC1123 parser rewrites datetime to an earlier value."""
     parser = RFC1123DTParser(text)
 
     assert parser, f"Failed to parse RFC1123 datetime: {text}"
