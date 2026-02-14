@@ -1,34 +1,31 @@
 """
-Unit tests for the `rewordapp.parser.datetime.RFC822DTParser` class.
+Unit tests for the `rewordapp.parser.datetime.RFC850DTParser` class.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/parser/datetime/test_rfc_822_dt_parser_class.py
+    $ pytest tests/unit/parser/datetime/test_rfc_850_dt_parser_class.py
     or
-    $ python -m pytest tests/unit/parser/datetime/test_rfc_822_dt_parser_class.py
+    $ python -m pytest tests/unit/parser/datetime/test_rfc_850_dt_parser_class.py
 """
 
 import pytest
 from datetime import datetime
 
-from rewordapp.parser.datetime import RFC822DTParser
+from rewordapp.parser.datetime import RFC850DTParser
 
 
 @pytest.mark.parametrize(
     "text, pattern",
     [
-        ("07 Feb 82 12:57:45 GMT", "%d %b %y %H:%M:%S GMT"),
-        ("Sat, 07 Feb 82 12:57:36 GMT", "%a, %d %b %y %H:%M:%S GMT"),
-        ("07 Feb 82 12:57 GMT", "%d %b %y %H:%M GMT"),
-        ("Sat, 07 Feb 82 12:57 GMT", "%a, %d %b %y %H:%M GMT"),
+        ("Saturday, 07-Feb-26 12:57:36 GMT", "%A, %d-%b-%y %H:%M:%S GMT"),
     ],
 )
-def test_rfc822_parsing(text, pattern):
+def test_rfc850_parsing(text, pattern):
     """Ensure RFC822 parser rewrites datetime to an earlier value."""
-    parser = RFC822DTParser(text)
+    parser = RFC850DTParser(text)
 
-    assert parser, f"Failed to parse RFC822 datetime: {text}"
+    assert parser, f"Failed to parse RFC850 datetime: {text}"
 
     rewritten = parser.rewritten
 
