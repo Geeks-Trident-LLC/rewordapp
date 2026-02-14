@@ -1,6 +1,6 @@
 """
-rewordapp.numberparser
-===================
+rewordapp.parser.number
+=======================
 
 number parsing and rewriting utilities.
 """

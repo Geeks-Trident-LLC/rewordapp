@@ -1,6 +1,6 @@
 """
-rewordapp.urlparser
-===================
+rewordapp.parser.url
+====================
 
 URL parsing and rewriting utilities used to extract components and generate
 mapped or obfuscated URL variants.

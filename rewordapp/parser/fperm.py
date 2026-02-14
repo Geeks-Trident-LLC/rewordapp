@@ -1,22 +1,20 @@
 """
-rewordapp.wordparser
-====================
+rewordapp.parser.fperm
+======================
 
-word parsing and rewriting utilities.
+File permission parsing and rewriting utilities.
 """
 
 import re
-import string
+from rewordapp import rewritten
 
-import rewordapp.rewritten as rewritten
-
-class WordParser:
+class FilePermissionParser:
 
     def __init__(self, text: str):
         self._text = text
         self._prefix = ""
         self._suffix = ""
-        self._word = ""
+        self._file_permission = ""
 
         self._parse()
 
@@ -26,11 +24,11 @@ class WordParser:
 
     def __len__(self) -> int:
         """Return 1 if word was parsed, else 0."""
-        return 1 if self._word else 0
+        return 1 if self._file_permission else 0
 
     def __bool__(self) -> bool:
         """Return True if word was parsed."""
-        return bool(self._word)
+        return bool(self._file_permission)
 
     # ------------------------------------------------------------
     # Properties
@@ -49,8 +47,8 @@ class WordParser:
         return self._suffix
 
     @property
-    def word(self):
-        return self._word
+    def file_permission(self):
+        return self._file_permission
 
     # ------------------------------------------------------------
     # Internal helpers
@@ -59,24 +57,31 @@ class WordParser:
     def _parse(self) -> None:
         """Parse word from raw text."""
 
-        punc_pattern = f"[{re.escape(string.punctuation)}]"
-        pattern = rf"""(?ixu)
-            (?P<prefix>{punc_pattern}+)?
-            (?P<word>.*[a-z0-9]+.*)
-            (?P<suffix>{punc_pattern}+)?
+        pattern = r"""(?ix)
+            (?P<file_permission>
+                (
+                    [dlcbpsw-]              # filetype
+                    [rts-][wts-][xts-]      # owner
+                    [rts-][wts-][xts-]      # group
+                    [rts-][wts-][xts-]      # other
+                    [+@.-]{0,2}             # extended attributes
+                )|
+                (
+                    [d-]                    # filetype
+                    [rhsail-]{5}            #
+                )
+            )
         """
 
         match = re.fullmatch(pattern, self._text)
         if not match:
             return
 
-        self._prefix = match.groupdict().get("prefix") or ""
-        self._word = match.groupdict().get("word") or ""
-        self._suffix = match.groupdict().get("suffix") or ""
+        self._file_permission = match.groupdict().get("file_permission") or ""
 
     def generate_new(self):
         if not self:
             return self.__class__(self.raw)
 
-        new_word = rewritten.new_word(self.word)
-        return self.__class__(f"{self.prefix}{new_word}{self.suffix}")
+        new_file_permission = rewritten.new_file_permission(self.file_permission)
+        return self.__class__(new_file_permission)

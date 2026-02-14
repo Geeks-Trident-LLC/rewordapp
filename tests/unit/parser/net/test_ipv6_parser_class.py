@@ -1,16 +1,16 @@
 """
-Unit tests for the `rewordapp.netparser.IPv6Parser` class.
+Unit tests for the `rewordapp.parser.net.IPv6Parser` class.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/netparser/test_ipv6_parser.py
+    $ pytest tests/unit/parser/net/test_ipv6_parser.py
     or
-    $ python -m pytest tests/unit/netparser/test_ipv6_parser.py
+    $ python -m pytest tests/unit/parser/net/test_ipv6_parser.py
 """
 
 import pytest
-from rewordapp.netparser import IPv6Parser
+from rewordapp.parser.net import IPv6Parser
 
 
 @pytest.mark.parametrize(

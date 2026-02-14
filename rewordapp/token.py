@@ -1,11 +1,11 @@
 
 import re
 
-from rewordapp.netparser import IPv4Parser, IPv6Parser, MACParser
-from rewordapp.urlparser import URLParser
-from rewordapp.numberparser import NumberParser
-from rewordapp.wordparser import WordParser
-from rewordapp.fpparser import FilePermissionParser
+from rewordapp.parser.net import IPv4Parser, IPv6Parser, MACParser
+from rewordapp.parser.url import URLParser
+from rewordapp.parser.number import NumberParser
+from rewordapp.parser.word import WordParser
+from rewordapp.parser.fperm import FilePermissionParser
 
 from rewordapp.rules import RewriteRules
 

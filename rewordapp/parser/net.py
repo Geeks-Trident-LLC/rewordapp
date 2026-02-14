@@ -1,6 +1,6 @@
 """
-rewordapp.netparser
-===================
+rewordapp.parser.net
+====================
 
 Network parsing utilities for RewordApp.
 

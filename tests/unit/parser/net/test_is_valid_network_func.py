@@ -1,17 +1,17 @@
 """
-Unit tests for the `rewordapp.netparser.is_valid_network` function.
+Unit tests for the `rewordapp.parser.net.is_valid_network` function.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/netparser/test_is_valid_network_func.py
+    $ pytest tests/unit/parser/net/test_is_valid_network_func.py
     or
-    $ python -m pytest tests/unit/netparser/test_is_valid_network_func.py
+    $ python -m pytest tests/unit/parser/net/test_is_valid_network_func.py
 """
 
 
 import pytest
-from rewordapp.netparser import is_valid_network
+from rewordapp.parser.net import is_valid_network
 
 
 @pytest.mark.parametrize(

@@ -1,16 +1,16 @@
 """
-Unit tests for the `rewordapp.netparser.MacParser` class.
+Unit tests for the `rewordapp.parser.net.MacParser` class.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/netparser/test_mac_parser.py
+    $ pytest tests/unit/parser/net/test_mac_parser.py
     or
-    $ python -m pytest tests/unit/netparser/test_mac_parser.py
+    $ python -m pytest tests/unit/parser/net/test_mac_parser.py
 """
 
 import pytest
-from rewordapp.netparser import MACParser
+from rewordapp.parser.net import MACParser
 
 
 @pytest.mark.parametrize(
