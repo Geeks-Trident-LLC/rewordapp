@@ -271,3 +271,18 @@ class RFC2822DTParser(BaseDTParser):
                 raw_parts = utils.split_by_matches(self._raw_text)[-2:]
                 self._output_format = "".join(fmt_parts + raw_parts)
                 return
+
+
+class RFC3339DTParser(BaseDTParser):
+    """Parse RFC 3339–style datetime strings."""
+
+    def _parse(self):
+        patterns = [
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z"
+        ]
+        for pattern in patterns:
+            if self.try_parse_with(pattern):
+                # Reconstruct output format by merging tokens from pattern + raw text
+                self._output_format = pattern[:17] + self._raw_text[19:]
+                return
