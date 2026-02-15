@@ -326,21 +326,6 @@ class ISO8601DTParser(BaseDTParser):
 
     def _parse(self):
         self.parse_with_any(
-            # Calendar date + time
-            "%Y-%m-%dT%H:%M",
-            "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S.%f",
-            "%Y-%m-%dT%H:%M%z",
-            "%Y-%m-%dT%H:%M:%S%z",
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-
-            "%Y%m%dT%H%M",
-            "%Y%m%dT%H%M%S",
-            "%Y%m%dT%H%M%S.%f",
-            "%Y%m%dT%H%M%z",
-            "%Y%m%dT%H%M%S%z",
-            "%Y%m%dT%H%M%S.%f%z",
-
             # Ordinal date + time
             "%Y-%jT%H:%M:%S",
             "%Y-%jT%H:%M:%S%z",
@@ -362,4 +347,42 @@ class ISO8601DTParser(BaseDTParser):
             "%G-W%V-%uT%H:%M:%S.%f%z",
             "%GW%V%uT%H%M%S.%f",
             "%GW%V%uT%H%M%S.%f%z",
+
+            # Calendar date + time
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M%z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+
+            "%Y%m%dT%H%M",
+            "%Y%m%dT%H%M%S",
+            "%Y%m%dT%H%M%S.%f",
+            "%Y%m%dT%H%M%z",
+            "%Y%m%dT%H%M%S%z",
+            "%Y%m%dT%H%M%S.%f%z",
+
+        )
+
+
+class ISO8601DateParser(BaseDTParser):
+    """Parse ISO 8601 date strings."""
+
+    def _parse(self):
+        self.parse_with_any(
+            # Ordinal Date
+            "%Y-%j",
+            "%Y%j",
+
+            # Week date
+            "%G-W%V-%u",
+            "%G-W%V",
+            "%GW%V%u",
+            "%GW%V",
+
+            # Calendar date
+            "%Y-%m-%d",
+            "%Y%m%d",
+
         )
