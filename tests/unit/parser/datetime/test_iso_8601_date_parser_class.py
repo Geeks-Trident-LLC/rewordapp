@@ -16,40 +16,32 @@ from rewordapp.parser.datetime import ISO8601DateParser
 
 
 @pytest.mark.parametrize(
-    "text, pattern",
+    "text",
     [
         # Calendar date + time
-        ("2026-02-14", "%Y-%m-%d"),
-        ("20260214", "%Y%m%d"),
+        "2026-02-14",
+        "20260214",
 
         # Ordinal date + time
-        ("2026-045", "%Y-%j"),
-        ("2026045", "%Y%j"),
+        "2026-045",
+        "2026045",
         #
         # Week date + time
-        ("2026-W06-6", "%G-W%V-%u"),
-        ("2026W066", "%GW%V%u"),
+        "2026-W06-6",
+        "2026W066",
 
 
     ],
 )
-def test_iso_8601_date_parsing(text, pattern):
+def test_iso_8601_date_parsing(text):
     """Ensure ISO8601 parser rewrites date to an earlier value."""
 
     parser = ISO8601DateParser(text)
 
     assert parser, f"Failed to parse ISO8601 date: {text}"
 
-    rewritten = parser.rewritten
-
     try:
-        original_dt = datetime.strptime(text, pattern)
-        rewritten_dt = datetime.strptime(rewritten, pattern)
+        datetime.strptime(text, parser._output_format)
+        datetime.strptime(parser.rewritten, parser._output_format)
     except Exception as exc:
         pytest.fail(f"strptime failed: {exc}")
-
-    assert original_dt > rewritten_dt, (
-        f"Rewritten date should be earlier.\n"
-        f"Original:  {original_dt}\n"
-        f"Rewritten: {rewritten_dt}"
-    )

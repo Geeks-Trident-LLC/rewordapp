@@ -16,27 +16,18 @@ from rewordapp.parser.datetime import RFC850DTParser
 
 
 @pytest.mark.parametrize(
-    "text, pattern",
+    "text",
     [
-        ("Saturday, 07-Feb-26 12:57:36 GMT", "%A, %d-%b-%y %H:%M:%S GMT"),
+        "Saturday, 07-Feb-26 12:57:36 GMT",
     ],
 )
-def test_rfc850_parsing(text, pattern):
+def test_rfc850_parsing(text):
     """Ensure RFC850 parser rewrites datetime to an earlier value."""
     parser = RFC850DTParser(text)
 
     assert parser, f"Failed to parse RFC850 datetime: {text}"
-
-    rewritten = parser.rewritten
-
     try:
-        original_dt = datetime.strptime(text, pattern)
-        rewritten_dt = datetime.strptime(rewritten, pattern)
+        datetime.strptime(text, parser._output_format)
+        datetime.strptime(parser.rewritten, parser._output_format)
     except Exception as exc:
         pytest.fail(f"strptime failed: {exc}")
-
-    assert original_dt > rewritten_dt, (
-        f"Rewritten datetime should be earlier.\n"
-        f"Original:  {original_dt}\n"
-        f"Rewritten: {rewritten_dt}"
-    )

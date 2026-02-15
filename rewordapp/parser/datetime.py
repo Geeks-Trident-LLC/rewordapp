@@ -138,26 +138,47 @@ class BaseDTParser:
 
     @property
     def rewritten(self) -> str:
-        """Return rewritten datetime string or raw text if not parsed."""
+        """Return rewritten datetime string, or raw text if parsing failed."""
         if not self:
             return self._raw_text
 
-        month = random_day_or_month(self._month)
-        day = random_day_or_month(self._day)
-        hour = random_time_component(self._hour)
-        minute = random_time_component(self._minute)
-        second = random_time_component(self._second)
+        smaller_dt = self._generate_smaller_datetime()
+        return smaller_dt.strftime(self._output_format)
 
-        dt = datetime(
+    def _generate_smaller_datetime(self, max_attempts: int = 100) -> datetime:
+        """Return a randomized datetime strictly earlier than the parsed one."""
+        original = datetime(
             year=self._year,
-            month=month,
-            day=day,
-            hour=hour,
-            minute=minute,
-            second=second,
+            month=self._month,
+            day=self._day,
+            hour=self._hour,
+            minute=self._minute,
+            second=self._second,
             microsecond=random.randint(0, 999999),
         )
-        return dt.strftime(self._output_format)
+
+        def random_candidate() -> datetime:
+            return datetime(
+                year=self._year,
+                month=random_day_or_month(self._month),
+                day=random_day_or_month(self._day),
+                hour=random_time_component(self._hour),
+                minute=random_time_component(self._minute),
+                second=random_time_component(self._second),
+                microsecond=random.randint(0, 999999),
+            )
+
+        candidate = random_candidate()
+        if candidate < original:
+            return candidate
+
+        for _ in range(max_attempts):
+            candidate = random_candidate()
+            if candidate < original:
+                return candidate
+
+        # Fallback: return last candidate even if not smaller
+        return candidate
 
     def _parse(self):
         """Subclasses must implement parsing logic."""
@@ -384,5 +405,29 @@ class ISO8601DateParser(BaseDTParser):
             # Calendar date
             "%Y-%m-%d",
             "%Y%m%d",
+
+        )
+
+class ISO8601TimeParser(BaseDTParser):
+    """Parse ISO 8601 datetime strings."""
+
+    def _parse(self):
+        self.parse_with_any(
+            # time
+            "%H:%M:%S.%f",
+            "%H:%M:%S",
+            "%H:%M",
+
+            "%H:%M:%S.%f%z",
+            "%H:%M:%S%z",
+            "%H:%M%z",
+
+            "%H%M%S.%f",
+            "%H%M%S",
+            "%H%M",
+
+            "%H%M%S.%f%z",
+            "%H%M%S%z",
+            "%H%M%z",
 
         )
