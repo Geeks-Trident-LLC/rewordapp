@@ -164,10 +164,10 @@ class BaseDTParser:
         """Subclasses must implement parsing logic."""
         raise NotImplementedError("Subclasses must implement _parse()")
 
-    def try_parse_with(self, pattern: str) -> bool:
-        """Try parsing raw text using the given strptime pattern."""
+    def try_parse_with(self, fmt: str) -> bool:
+        """Try parsing raw text using the given strptime fmt."""
         try:
-            dt = datetime.strptime(self._raw_text, pattern)
+            dt = datetime.strptime(self._raw_text, fmt)
         except ValueError:
             return False
 
@@ -178,114 +178,99 @@ class BaseDTParser:
         self._minute = dt.minute
         self._second = dt.second
         self._is_parsed = True
+
+        if re.search("(?i) GMT$", fmt):
+            # 1. Literal GMT at end (RFC 1123)
+            self._output_format = fmt
+        elif "." in fmt:
+            # 2. Fractional seconds: preserve raw fractional precision
+            fmt_prefix, _ = fmt.rsplit(".", 1)
+            _, raw_fraction = self._raw_text.rsplit(".", 1)
+            self._output_format = f"{fmt_prefix}.{raw_fraction}"
+        elif re.search("(?i) %Z$", fmt):
+            # 3. Named timezone (%Z) with space before it
+            fmt_parts = utils.split_by_matches(fmt)[:-2]
+            raw_parts = utils.split_by_matches(self._raw_text)[-2:]
+            self._output_format = "".join(fmt_parts + raw_parts)
+        elif re.search("(?i)[^ ]%Z$", fmt):
+            # 4. Named timezone (%Z) with no preceding space
+            prefix = fmt[:-2]
+            consumed = dt.strftime(prefix)
+            remainder = self._raw_text[len(consumed):]
+            self._output_format = f"{prefix}{remainder}"
+        else:
+            # 5. Default: pattern is already the correct output format
+            self._output_format = fmt
+
         return True
+
+    def parse_with_any(self, *fmts):
+        """Try parsing raw text using each pattern until one succeeds."""
+        for fmt in fmts:
+            if self.try_parse_with(fmt):
+                return
 
 
 class RFC822DTParser(BaseDTParser):
-    """Parse RFC 822–style datetime strings using multiple patterns."""
+    """Parse RFC 822–style datetime strings using multiple fmts."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%d %b %y %H:%M:%S %Z",
             "%a, %d %b %y %H:%M:%S %Z",
             "%d %b %y %H:%M %Z",
             "%a, %d %b %y %H:%M %Z",
-        ]
-
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
 
 
 class RFC850DTParser(BaseDTParser):
     """Parse RFC 850–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%A, %d-%b-%y %H:%M:%S %Z",
-        ]
-
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
 
 
 class RFC1036DTParser(BaseDTParser):
     """Parse RFC 1036–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%a, %d %b %Y %H:%M:%S %Z",
             "%d %b %Y %H:%M:%S %Z",
-        ]
-
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
 
 
 class RFC1123DTParser(BaseDTParser):
     """Parse RFC 1123–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%a, %d %b %Y %H:%M:%S GMT",
-        ]
-
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
 
 
 class RFC2822DTParser(BaseDTParser):
     """Parse RFC 2822–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%a, %d %b %Y %H:%M:%S %z",
             "%a, %d %b %Y %H:%M %z",
             "%d %b %Y %H:%M:%S %z",
             "%d %b %Y %H:%M %z",
-        ]
-
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
 
 
 class RFC3339DTParser(BaseDTParser):
     """Parse RFC 3339–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%Y-%m-%dT%H:%M:%S%z",
             "%Y-%m-%dT%H:%M:%S.%f%z"
-        ]
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                self._output_format = pattern[:17] + self._raw_text[19:]
-                return
+        )
 
 
 class RFC7231DTParser(BaseDTParser):
@@ -306,36 +291,20 @@ class RFC7231DTParser(BaseDTParser):
         return result
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%a, %d %b %Y %H:%M:%S %Z",
             "%A, %d-%b-%y %H:%M:%S %Z",
             "%a %b %d %H:%M:%S %Y"
-        ]
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                if "%Z" in pattern:
-                    fmt_parts = utils.split_by_matches(pattern)[:-2]
-                    raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                    self._output_format = "".join(fmt_parts + raw_parts)
-                    return
-                self._output_format = pattern
-                return
+        )
+
 
 class RFC5322DTParser(BaseDTParser):
     """Parse RFC 5322–style datetime strings."""
 
     def _parse(self):
-        patterns = [
+        self.parse_with_any(
             "%a, %d %b %Y %H:%M:%S %z",
             "%a, %d %b %Y %H:%M %z",
             "%d %b %Y %H:%M:%S %z",
             "%d %b %Y %H:%M %z",
-        ]
-        for pattern in patterns:
-            if self.try_parse_with(pattern):
-                # Reconstruct output format by merging tokens from pattern + raw text
-                fmt_parts = utils.split_by_matches(pattern)[:-2]
-                raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-                self._output_format = "".join(fmt_parts + raw_parts)
-                return
+        )
