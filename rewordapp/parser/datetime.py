@@ -1,6 +1,5 @@
 
 import re
-import string
 from datetime import datetime
 import random
 
@@ -171,6 +170,41 @@ class BaseDTParser:
         except ValueError:
             return False
 
+        if re.search("(?i) GMT$", fmt):
+            # 1. Literal GMT at end (RFC 1123)
+            output_format = fmt
+        elif "." in fmt:
+            # 2. Fractional seconds: preserve raw fractional precision
+            fmt_prefix, _ = fmt.rsplit(".", 1)
+            _, raw_fraction = self._raw_text.rsplit(".", 1)
+            output_format = f"{fmt_prefix}.{raw_fraction}"
+        elif re.search("(?i) %Z$", fmt):
+            # 3. Named timezone (%Z) with space before it
+            fmt_parts = utils.split_by_matches(fmt)[:-2]
+            raw_parts = utils.split_by_matches(self._raw_text)[-2:]
+            output_format = "".join(fmt_parts + raw_parts)
+        elif re.search("(?i)[^ ]%Z$", fmt):
+            # 4. Named timezone (%Z) with no preceding space
+            prefix = fmt[:-2]
+            consumed = dt.strftime(prefix)
+            remainder = self._raw_text[len(consumed):]
+            output_format = f"{prefix}{remainder}"
+        else:
+            # 5. Default: pattern is already the correct output format
+            output_format = fmt
+
+        # --- ISO date-length consistency check ---
+        if "T" in self._raw_text and "T" in output_format:
+            fmt_date, _ = output_format.split("T", 1)
+            raw_date, _ = self._raw_text.split("T", 1)
+
+            # If the formatted date doesn't match the raw date length, reject
+            if len(dt.strftime(fmt_date)) != len(raw_date):
+                return False
+
+        # --- Store parsed components ---
+
+        self._output_format = output_format
         self._year = dt.year
         self._month = dt.month
         self._day = dt.day
@@ -178,29 +212,6 @@ class BaseDTParser:
         self._minute = dt.minute
         self._second = dt.second
         self._is_parsed = True
-
-        if re.search("(?i) GMT$", fmt):
-            # 1. Literal GMT at end (RFC 1123)
-            self._output_format = fmt
-        elif "." in fmt:
-            # 2. Fractional seconds: preserve raw fractional precision
-            fmt_prefix, _ = fmt.rsplit(".", 1)
-            _, raw_fraction = self._raw_text.rsplit(".", 1)
-            self._output_format = f"{fmt_prefix}.{raw_fraction}"
-        elif re.search("(?i) %Z$", fmt):
-            # 3. Named timezone (%Z) with space before it
-            fmt_parts = utils.split_by_matches(fmt)[:-2]
-            raw_parts = utils.split_by_matches(self._raw_text)[-2:]
-            self._output_format = "".join(fmt_parts + raw_parts)
-        elif re.search("(?i)[^ ]%Z$", fmt):
-            # 4. Named timezone (%Z) with no preceding space
-            prefix = fmt[:-2]
-            consumed = dt.strftime(prefix)
-            remainder = self._raw_text[len(consumed):]
-            self._output_format = f"{prefix}{remainder}"
-        else:
-            # 5. Default: pattern is already the correct output format
-            self._output_format = fmt
 
         return True
 
@@ -307,4 +318,48 @@ class RFC5322DTParser(BaseDTParser):
             "%a, %d %b %Y %H:%M %z",
             "%d %b %Y %H:%M:%S %z",
             "%d %b %Y %H:%M %z",
+        )
+
+
+class ISO8601DTParser(BaseDTParser):
+    """Parse ISO 8601 datetime strings."""
+
+    def _parse(self):
+        self.parse_with_any(
+            # Calendar date + time
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M%z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+
+            "%Y%m%dT%H%M",
+            "%Y%m%dT%H%M%S",
+            "%Y%m%dT%H%M%S.%f",
+            "%Y%m%dT%H%M%z",
+            "%Y%m%dT%H%M%S%z",
+            "%Y%m%dT%H%M%S.%f%z",
+
+            # Ordinal date + time
+            "%Y-%jT%H:%M:%S",
+            "%Y-%jT%H:%M:%S%z",
+            "%Y-%jT%H:%M:%S.%f",
+            "%Y-%jT%H:%M:%S.%f%z",
+
+            "%Y%jT%H%M%S",
+            "%Y%jT%H%M%S%z",
+            "%Y%jT%H%M%S.%f",
+            "%Y%jT%H%M%S.%f%z",
+
+            # Week date + time
+            "%G-W%V-%uT%H:%M:%S",
+            "%G-W%V-%uT%H:%M:%S%z",
+            "%GW%V%uT%H%M%S",
+            "%GW%V%uT%H%M%S%z",
+
+            "%G-W%V-%uT%H:%M:%S.%f",
+            "%G-W%V-%uT%H:%M:%S.%f%z",
+            "%GW%V%uT%H%M%S.%f",
+            "%GW%V%uT%H%M%S.%f%z",
         )
