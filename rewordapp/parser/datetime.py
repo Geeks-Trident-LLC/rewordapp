@@ -194,7 +194,7 @@ class BaseDTParser:
         if re.search("(?i) GMT$", fmt):
             # 1. Literal GMT at end (RFC 1123)
             output_format = fmt
-        elif "." in fmt:
+        elif fmt.count(".") == 1 or fmt.count(".") >= 3:
             # 2. Fractional seconds: preserve raw fractional precision
             fmt_prefix, _ = fmt.rsplit(".", 1)
             _, raw_fraction = self._raw_text.rsplit(".", 1)
@@ -431,3 +431,559 @@ class ISO8601TimeParser(BaseDTParser):
             "%H%M%z",
 
         )
+
+
+class UserDTParser(BaseDTParser):
+    """Parse Common User datetime strings."""
+
+    def _parse_12h_style(self):
+        """Attempt parsing 12‑hour (AM/PM) datetime formats."""
+        if self:
+            return
+
+        if re.search(r"(?i)[ap]m", self._raw_text):
+            if "-" in self._raw_text:
+                self.parse_with_any(
+                    '%m-%d-%Y %I%p',
+                     '%m-%d-%Y %I %p',
+                     '%m-%d-%Y %I:%M%p',
+                     '%m-%d-%Y %I:%M %p',
+                     '%m-%d-%Y %I:%M:%S %p',
+                     '%m-%d-%Y %I:%M:%S.%f %p',
+                     '%m-%d-%Y %I:%M:%S.%f %p %z',
+                     '%m-%d-%Y %I:%M:%S.%f %p %Z'
+                )
+                return
+            elif "/" in self._raw_text:
+                self.parse_with_any(
+                    "%m/%d/%Y %I%p",
+                    "%m/%d/%Y %I %p",
+                    "%m/%d/%Y %I:%M%p",
+                    "%m/%d/%Y %I:%M %p",
+                    "%m/%d/%Y %I:%M:%S %p",
+                    "%m/%d/%Y %I:%M:%S.%f %p",
+                    "%m/%d/%Y %I:%M:%S.%f %p %z",
+                    "%m/%d/%Y %I:%M:%S.%f %p %Z",
+                )
+                return
+
+            elif self._raw_text.count(",") == 2:
+                self.parse_with_any(
+                    "%a, %b %d, %Y %I%p",
+                    "%A, %B %d, %Y %I%p",
+                    "%a, %b %d, %Y %I %p",
+                    "%A, %B %d, %Y %I %p",
+                    "%a, %b %d, %Y %I:%M %p",
+                    "%A, %B %d, %Y %I:%M %p",
+                    "%a, %b %d, %Y %I:%M:%S %p",
+                    "%A, %B %d, %Y %I:%M:%S %p",
+                    "%a, %b %d, %Y %I:%M:%S.%f %p",
+                    "%A, %B %d, %Y %I:%M:%S.%f %p",
+
+                    "%a, %b %d, %Y %I%p%Z",
+                    "%A, %B %d, %Y %I%p%Z",
+                    "%a, %b %d, %Y %I%p %Z",
+                    "%A, %B %d, %Y %I%p %Z",
+                    "%a, %b %d, %Y %I %p %Z",
+                    "%A, %B %d, %Y %I %p %Z",
+                    "%a, %b %d, %Y %I:%M %p %Z",
+                    "%A, %B %d, %Y %I:%M %p %Z",
+                    "%a, %b %d, %Y %I:%M:%S %p %Z",
+                    "%A, %B %d, %Y %I:%M:%S %p %Z",
+                    "%a, %b %d, %Y %I:%M:%S.%f %p %Z",
+                    "%A, %B %d, %Y %I:%M:%S.%f %p %Z",
+
+                    "%a, %b %d, %Y %I%p%z",
+                    "%A, %B %d, %Y %I%p%z",
+                    "%a, %b %d, %Y %I%p %z",
+                    "%A, %B %d, %Y %I%p %z",
+                    "%a, %b %d, %Y %I %p %z",
+                    "%A, %B %d, %Y %I %p %z",
+                    "%a, %b %d, %Y %I:%M %p %z",
+                    "%A, %B %d, %Y %I:%M %p %z",
+                    "%a, %b %d, %Y %I:%M:%S %p %z",
+                    "%A, %B %d, %Y %I:%M:%S %p %z",
+                    "%a, %b %d, %Y %I:%M:%S.%f %p %z",
+                    "%A, %B %d, %Y %I:%M:%S.%f %p %z",
+                )
+                return
+            elif self._raw_text.count(",") == 1:
+                self.parse_with_any(
+                    "%b %d, %Y %I%p",
+                    "%B %d, %Y %I%p",
+                    "%b %d, %Y %I %p",
+                    "%B %d, %Y %I %p",
+                    "%b %d, %Y %I:%M %p",
+                    "%B %d, %Y %I:%M %p",
+                    "%b %d, %Y %I:%M:%S %p",
+                    "%B %d, %Y %I:%M:%S %p",
+                    "%b %d, %Y %I:%M:%S.%f %p",
+                    "%B %d, %Y %I:%M:%S.%f %p",
+
+                    "%b %d, %Y %I%p %Z",
+                    "%B %d, %Y %I%p %Z",
+                    "%b %d, %Y %I %p %Z",
+                    "%B %d, %Y %I %p %Z",
+                    "%b %d, %Y %I:%M %p %Z",
+                    "%B %d, %Y %I:%M %p %Z",
+                    "%b %d, %Y %I:%M:%S %p %Z",
+                    "%B %d, %Y %I:%M:%S %p %Z",
+                    "%b %d, %Y %I:%M:%S.%f %p %Z",
+                    "%B %d, %Y %I:%M:%S.%f %p %Z",
+
+                    "%b %d, %Y %I%p %z",
+                    "%B %d, %Y %I%p %z",
+                    "%b %d, %Y %I %p %z",
+                    "%B %d, %Y %I %p %z",
+                    "%b %d, %Y %I:%M %p %z",
+                    "%B %d, %Y %I:%M %p %z",
+                    "%b %d, %Y %I:%M:%S %p %z",
+                    "%B %d, %Y %I:%M:%S %p %z",
+                    "%b %d, %Y %I:%M:%S.%f %p %z",
+                    "%B %d, %Y %I:%M:%S.%f %p %z",
+                )
+                return
+            else:
+                self.parse_with_any(
+                    "%A %I %p",
+                    "%a %I %p",
+                    "%A %I%p",
+                    "%a %I%p",
+                )
+
+    def _parse_other_style(self):
+        """Parse datetime strings using month/weekday names in various layouts."""
+
+        if self:
+            return
+
+        # Weekday-month-day
+        if re.match(r"(?i)[a-z]+, +[a-z]+ +\d{1,2}, +\d{4} ", self._raw_text):
+            self.parse_with_any(
+                "%A, %B %d, %Y %H:%M",
+                "%A, %B %d, %Y %H:%M:%S",
+                "%A, %B %d, %Y %H:%M:%S.%f",
+
+                "%a, %b %d, %Y %H:%M",
+                "%a, %b %d, %Y %H:%M:%S",
+                "%a, %b %d, %Y %H:%M:%S.%f",
+
+                "%A, %B %d, %Y %H:%M %z",
+                "%A, %B %d, %Y %H:%M:%S %z",
+                "%A, %B %d, %Y %H:%M:%S.%f %z",
+
+                "%A, %B %d, %Y %H:%M %Z",
+                "%A, %B %d, %Y %H:%M:%S %Z",
+                "%A, %B %d, %Y %H:%M:%S.%f %Z",
+
+                "%a, %b %d, %Y %H:%M %z",
+                "%a, %b %d, %Y %H:%M:%S %z",
+                "%a, %b %d, %Y %H:%M:%S.%f %z",
+
+                "%a, %b %d, %Y %H:%M %Z",
+                "%a, %b %d, %Y %H:%M:%S %Z",
+                "%a, %b %d, %Y %H:%M:%S.%f %Z",
+            )
+            return
+
+        # month-day
+        if re.match(r"(?i)[a-z]+ +\d{1,2}, +\d{4} ", self._raw_text):
+            self.parse_with_any(
+                "%B %d, %Y %H:%M",
+                "%B %d, %Y %H:%M:%S",
+                "%B %d, %Y %H:%M:%S.%f",
+
+                "%b %d, %Y %H:%M",
+                "%b %d, %Y %H:%M:%S",
+                "%b %d, %Y %H:%M:%S.%f",
+
+                "%B %d, %Y %H:%M %z",
+                "%B %d, %Y %H:%M:%S %z",
+                "%B %d, %Y %H:%M:%S.%f %z",
+
+                "%B %d, %Y %H:%M %Z",
+                "%B %d, %Y %H:%M:%S %Z",
+                "%B %d, %Y %H:%M:%S.%f %Z",
+
+                "%b %d, %Y %H:%M %z",
+                "%b %d, %Y %H:%M:%S %z",
+                "%b %d, %Y %H:%M:%S.%f %z",
+
+                "%b %d, %Y %H:%M %Z",
+                "%b %d, %Y %H:%M:%S %Z",
+                "%b %d, %Y %H:%M:%S.%f %Z",
+            )
+            return
+
+        # day-month
+        if re.match(r"(?i)\d{1,2} +[a-z]+ +\d{4} ", self._raw_text):
+            if self._raw_text.count("."):
+                self.parse_with_any(
+                    "%d %B %Y %H:%M:%S.%f",
+                    "%d %b %Y %H:%M:%S.%f",
+
+                    "%d %B %Y %H:%M:%S.%f %z",
+                    "%d %B %Y %H:%M:%S.%f %Z",
+
+                    "%d %b %Y %H:%M:%S.%f %z",
+                    "%d %b %Y %H:%M:%S.%f %Z",
+
+                )
+                return
+
+            if self._raw_text.count(":") == 2:
+                self.parse_with_any(
+                    "%d %B %Y %H:%M:%S",
+                    "%d %b %Y %H:%M:%S",
+
+                    "%d %B %Y %H:%M:%S %z",
+                    "%d %B %Y %H:%M:%S %Z",
+
+                    "%d %b %Y %H:%M:%S %z",
+                    "%d %b %Y %H:%M:%S %Z",
+                )
+                return
+
+            self.parse_with_any(
+                "%d %B %Y %H:%M",
+                "%d %b %Y %H:%M",
+
+                "%d %B %Y %H:%M %z",
+                "%d %B %Y %H:%M %Z",
+
+                "%d %b %Y %H:%M %z",
+                "%d %b %Y %H:%M %Z",
+            )
+
+    def _parse_compact_numeric_style(self) -> None:
+        """Parse compact numeric datetime strings (YYYYMMDDHHMM...)."""
+        text = self._raw_text
+
+        # Already parsed or clearly not compact (contains separators)
+        if self or re.match(r"\d{2,4}[/.-]", text) or not re.match(r"\d{8}", text):
+            return
+
+        spaced_formats = [
+            "%Y%m%d %H:%M",
+            "%Y%m%d %H:%M:%S",
+            "%Y%m%d %H:%M:%S.%f",
+
+            "%Y%m%d %H:%M %Z",
+            "%Y%m%d %H:%M:%S %Z",
+            "%Y%m%d %H:%M:%S.%f %Z",
+
+            "%Y%m%d %H:%M %z",
+            "%Y%m%d %H:%M:%S %z",
+            "%Y%m%d %H:%M:%S.%f %z",
+        ]
+
+        compact_formats = [
+            "%Y%m%d%H%M",
+            "%Y%m%d%H%M%S",
+            "%Y%m%d%H%M%S.%f",
+
+            "%Y%m%d%H%M%Z",
+            "%Y%m%d%H%M%S%Z",
+            "%Y%m%d%H%M%S.%f%Z",
+
+            "%Y%m%d%H%M%z",
+            "%Y%m%d%H%M%S%z",
+            "%Y%m%d%H%M%S.%f%z",
+        ]
+
+        if " " in text:
+            self.parse_with_any(*spaced_formats)
+        else:
+            self.parse_with_any(*compact_formats)
+
+    def _parse_us_style(self) -> None:
+        """Parse US‑style numeric dates (MM/DD/YYYY or MM‑DD‑YYYY)."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Match: MM/DD/YYYY␣ or MM-DD-YYYY␣
+        if not re.match(r"(\d{1,2}[/-]){2}\d{4} ", text):
+            return
+
+        # Reject impossible month (e.g., 15/02/2026)
+        month = int(re.split(r"[/-]+", text)[0])
+        if month > 12:
+            return
+
+        dash_formats = [
+            "%m-%d-%Y %H:%M",
+            "%m-%d-%Y %H:%M:%S",
+            "%m-%d-%Y %H:%M:%S.%f",
+
+            "%m-%d-%Y %H:%M %Z",
+            "%m-%d-%Y %H:%M:%S %Z",
+            "%m-%d-%Y %H:%M:%S.%f %Z",
+
+            "%m-%d-%Y %H:%M %z",
+            "%m-%d-%Y %H:%M:%S %z",
+            "%m-%d-%Y %H:%M:%S.%f %z",
+        ]
+
+        slash_formats = [
+            "%m/%d/%Y %H:%M",
+            "%m/%d/%Y %H:%M:%S",
+            "%m/%d/%Y %H:%M:%S.%f",
+
+            "%m/%d/%Y %H:%M %Z",
+            "%m/%d/%Y %H:%M:%S %Z",
+            "%m/%d/%Y %H:%M:%S.%f %Z",
+
+            "%m/%d/%Y %H:%M %z",
+            "%m/%d/%Y %H:%M:%S %z",
+            "%m/%d/%Y %H:%M:%S.%f %z",
+        ]
+
+        if "-" in text:
+            self.parse_with_any(*dash_formats)
+        else:
+            self.parse_with_any(*slash_formats)
+
+    def _parse_european_style(self) -> None:
+        """Parse European-style numeric dates (DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY)."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Match: DD/MM/YYYY␣ or DD-MM-YYYY␣ or DD.MM.YYYY␣
+        if not re.match(r"(\d{1,2}[./-]){2}\d{4} ", text):
+            return
+
+        # Reject impossible month (e.g., 15/02/2026 is fine, but 15/20/2026 is not)
+        # Month is the *second* numeric component in European formats.
+        month = int(re.split(r"[./-]+", text)[1])
+        if month > 12:
+            return
+
+        dash_formats = [
+            "%d-%m-%Y %H:%M",
+            "%d-%m-%Y %H:%M:%S",
+            "%d-%m-%Y %H:%M:%S.%f",
+
+            "%d-%m-%Y %H:%M %Z",
+            "%d-%m-%Y %H:%M:%S %Z",
+            "%d-%m-%Y %H:%M:%S.%f %Z",
+
+            "%d-%m-%Y %H:%M %z",
+            "%d-%m-%Y %H:%M:%S %z",
+            "%d-%m-%Y %H:%M:%S.%f %z",
+        ]
+
+        slash_formats = [
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M:%S.%f",
+
+            "%d/%m/%Y %H:%M %Z",
+            "%d/%m/%Y %H:%M:%S %Z",
+            "%d/%m/%Y %H:%M:%S.%f %Z",
+
+            "%d/%m/%Y %H:%M %z",
+            "%d/%m/%Y %H:%M:%S %z",
+            "%d/%m/%Y %H:%M:%S.%f %z",
+        ]
+
+        dot_formats = [
+            "%d.%m.%Y %H:%M",
+            "%d.%m.%Y %H:%M:%S",
+            "%d.%m.%Y %H:%M:%S.%f",
+
+            "%d.%m.%Y %H:%M %Z",
+            "%d.%m.%Y %H:%M:%S %Z",
+            "%d.%m.%Y %H:%M:%S.%f %Z",
+
+            "%d.%m.%Y %H:%M %z",
+            "%d.%m.%Y %H:%M:%S %z",
+            "%d.%m.%Y %H:%M:%S.%f %z",
+        ]
+
+        if "-" in text:
+            self.parse_with_any(*dash_formats)
+        elif "/" in text:
+            self.parse_with_any(*slash_formats)
+        else:
+            self.parse_with_any(*dot_formats)
+
+    def _parse_iso_style(self) -> None:
+        """Parse ISO-like numeric dates (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD)."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Match: YYYY-MM-DD␣ or YYYY/MM/DD␣ or YYYY.MM.DD␣
+        if not re.match(r"\d{4}[./-]", text):
+            return
+
+        hyphen_formats = [
+            "%Y-%m-%d %H:%M:%S.%f",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+
+            "%Y-%m-%d %H:%M:%S.%f %Z",
+            "%Y-%m-%d %H:%M:%S.%f %z",
+            "%Y-%m-%d %H:%M:%S.%f%Z",
+            "%Y-%m-%d %H:%M:%S.%f%z",
+
+            "%Y-%m-%d %H:%M:%S %Z",
+            "%Y-%m-%d %H:%M:%S %z",
+            "%Y-%m-%d %H:%M:%S%Z",
+            "%Y-%m-%d %H:%M:%S%z",
+
+            "%Y-%m-%d %H:%M %Z",
+            "%Y-%m-%d %H:%M %z",
+            "%Y-%m-%d %H:%M%Z",
+            "%Y-%m-%d %H:%M%z",
+        ]
+
+        slash_formats = [
+            "%Y/%m/%d %H:%M:%S.%f",
+            "%Y/%m/%d %H:%M:%S",
+            "%Y/%m/%d %H:%M",
+
+            "%Y/%m/%d %H:%M:%S.%f %Z",
+            "%Y/%m/%d %H:%M:%S.%f %z",
+            "%Y/%m/%d %H:%M:%S.%f%Z",
+            "%Y/%m/%d %H:%M:%S.%f%z",
+
+            "%Y/%m/%d %H:%M:%S %Z",
+            "%Y/%m/%d %H:%M:%S %z",
+            "%Y/%m/%d %H:%M:%S%Z",
+            "%Y/%m/%d %H:%M:%S%z",
+
+            "%Y/%m/%d %H:%M %Z",
+            "%Y/%m/%d %H:%M %z",
+            "%Y/%m/%d %H:%M%Z",
+            "%Y/%m/%d %H:%M%z",
+        ]
+
+        dot_formats = [
+            "%Y.%m.%d %H:%M:%S.%f",
+            "%Y.%m.%d %H:%M:%S",
+            "%Y.%m.%d %H:%M",
+
+            "%Y.%m.%d %H:%M:%S.%f %Z",
+            "%Y.%m.%d %H:%M:%S.%f %z",
+            "%Y.%m.%d %H:%M:%S.%f%Z",
+            "%Y.%m.%d %H:%M:%S.%f%z",
+
+            "%Y.%m.%d %H:%M:%S %Z",
+            "%Y.%m.%d %H:%M:%S %z",
+            "%Y.%m.%d %H:%M:%S%Z",
+            "%Y.%m.%d %H:%M:%S%z",
+
+            "%Y.%m.%d %H:%M %Z",
+            "%Y.%m.%d %H:%M %z",
+            "%Y.%m.%d %H:%M%Z",
+            "%Y.%m.%d %H:%M%z",
+        ]
+
+        if "-" in text:
+            self.parse_with_any(*hyphen_formats)
+        elif "/" in text:
+            self.parse_with_any(*slash_formats)
+        else:
+            self.parse_with_any(*dot_formats)
+
+    def _parse_iso_week_style(self) -> None:
+        """Parse ISO week dates (YYYY‑Www‑d)."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # --- ISO week date: YYYY‑Www‑d or YYYYWwwd ------------------------------
+        if re.match(r"\d{4}-?W\d{2}-?\d ", text):
+            hyphen_formats = [
+                "%G-W%V-%u %H:%M",
+                "%G-W%V-%u %H:%M:%S",
+                "%G-W%V-%u %H:%M:%S.%f",
+
+                "%G-W%V-%u %H:%M %Z",
+                "%G-W%V-%u %H:%M:%S %Z",
+                "%G-W%V-%u %H:%M:%S.%f %Z",
+
+                "%G-W%V-%u %H:%M %z",
+                "%G-W%V-%u %H:%M:%S %z",
+                "%G-W%V-%u %H:%M:%S.%f %z",
+            ]
+
+            compact_formats = [
+                "%GW%V%u %H%M",
+                "%GW%V%u %H%M%S",
+                "%GW%V%u %H%M%S.%f",
+
+                "%GW%V%u %H%M %Z",
+                "%GW%V%u %H%M%S %Z",
+                "%GW%V%u %H%M%S.%f %Z",
+
+                "%GW%V%u %H%M %z",
+                "%GW%V%u %H%M%S %z",
+                "%GW%V%u %H%M%S.%f %z",
+            ]
+
+            if "-" in text:
+                self.parse_with_any(*hyphen_formats)
+            else:
+                self.parse_with_any(*compact_formats)
+            return
+
+    def _parse_iso_ordinal_style(self) -> None:
+        """Parse ISO ordinal dates (YYYY‑DDD)"""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # --- Ordinal date: YYYY‑DDD or YYYYDDD ---------------------------------
+        if re.match(r"\d{4}-?\d{3} ", text):
+            hyphen_formats = [
+                "%Y-%j %H:%M",
+                "%Y-%j %H:%M:%S",
+                "%Y-%j %H:%M:%S.%f",
+
+                "%Y-%j %H:%M %Z",
+                "%Y-%j %H:%M:%S %Z",
+                "%Y-%j %H:%M:%S.%f %Z",
+
+                "%Y-%j %H:%M %z",
+                "%Y-%j %H:%M:%S %z",
+                "%Y-%j %H:%M:%S.%f %z",
+            ]
+
+            compact_formats = [
+                "%Y%j %H%M",
+                "%Y%j %H%M%S",
+                "%Y%j %H%M%S.%f",
+
+                "%Y%j %H%M %Z",
+                "%Y%j %H%M%S %Z",
+                "%Y%j %H%M%S.%f %Z",
+
+                "%Y%j %H%M %z",
+                "%Y%j %H%M%S %z",
+                "%Y%j %H%M%S.%f %z",
+            ]
+
+            if "-" in text:
+                self.parse_with_any(*hyphen_formats)
+            else:
+                self.parse_with_any(*compact_formats)
+            return
+
+    def _parse(self):
+        self._parse_12h_style()
+        self._parse_other_style()
+        self._parse_compact_numeric_style()
+        self._parse_us_style()
+        self._parse_european_style()
+        self._parse_iso_style()
+        self._parse_iso_week_style()
+        self._parse_iso_ordinal_style()
