@@ -1,4 +1,5 @@
 
+import string
 import re
 from datetime import datetime
 import random
@@ -24,7 +25,7 @@ def random_time_component(base: int) -> int:
     return random.randint(10, base)
 
 
-class DateTimeParser:
+class BaseParser:
     def __init__(self, text):
         raw_text = "".join(text) if isinstance(text, (list, tuple)) else str(text)
 
@@ -32,24 +33,21 @@ class DateTimeParser:
 
         self._prefix = ""
         self._suffix = ""
-        self._datetime = ""
+        self._data = ""
 
-        self._year = datetime.now().year
-        self._month = datetime.now().month
-        self._day = datetime.now().day
-        self._hour = random.randint(0, 12)
-        self._minute = random.randint(0, 59)
-        self._second = random.randint(0, 59)
+        self._is_parsed = False
+        self._node = None
+        self._output_format = ""
 
         self._parse()
 
     def __len__(self) -> int:
         """Return 1 if datetime was parsed, else 0."""
-        return 1 if self._datetime else 0
+        return int(self._is_parsed)
 
     def __bool__(self) -> bool:
         """Return True if datetime was parsed."""
-        return bool(self._datetime)
+        return bool(self._is_parsed)
 
     # ------------------------------------------------------------
     # Properties
@@ -68,43 +66,52 @@ class DateTimeParser:
         return self._suffix
 
     @property
-    def datetime(self):
-        return self._datetime
+    def output_format(self) -> str:
+        return self._output_format
 
     @property
     def rewritten(self):
-        return f"{self._prefix}{self._datetime}{self._suffix}"
+        if not self:
+            return ""
+        return f"{self._prefix}{self._node.rewritten}{self._suffix}"
 
+    def _build(self, func):
+        """Extract prefix, core datetime text, and suffix,
+        then delegate to a datetime parser."""
+        punct_pattern = f"[{re.escape(string.punctuation)}]"
+        pattern = rf"""(?ix)
+            (?P<prefix>{punct_pattern}*)
+            (?P<datetime>[a-z0-9].+[a-z0-9])
+            (?P<suffix>{punct_pattern}*)
+            """
 
-    def _parse_compact(self):
-        # punct_pattern = f"[{re.escape(string.punctuation)}]"
-        # pattern = rf"""(?ix)
-        #     (?P<prefix>{punct_pattern}*)
-        #     (?P<dt_txt>[a-z0-9].+[a-z0-9])
-        #     (?P<suffix>{punct_pattern}*)
-        #     """
-        # match = re.fullmatch(pattern, self._raw_text)
-        # if not match:
-        #     return
+        match = re.fullmatch(pattern, self._raw_text)
+        if not match:
+            return
 
-        pass
-
+        dt_text = match.group("datetime")
+        node = func(dt_text)
+        if node:
+            self._is_parsed = True
+            self._prefix = match.group("prefix")
+            self._suffix = match.group("suffix")
+            self._node = node
+            self._output_format = f"{self._prefix}{node.output_format}{self._suffix}"
 
     def _parse(self):
-        # if not re.search(r"\s", self._raw_text):
-        #     self._parse_compact()
-        #     return
-        #
-        # punct_pattern = f"[{re.escape(string.punctuation)}]"
-        # pattern = rf"""(?ix)
-        #     (?P<prefix>{punct_pattern}*)
-        #     (?P<datetime>[a-z0-9].+[a-z0-9])
-        #     (?P<suffix>{punct_pattern}*)
-        #     """
-        #
-        # match = re.fullmatch(pattern, self._raw_text)
+        NotImplementedError("Subclasses must implement _parse()")
 
-        pass
+
+class DateTimeParser(BaseParser):
+    """Parse a datetime string using the full parser registry."""
+
+    @property
+    def datetime(self) -> str:
+        return self._data
+
+    def _parse(self) -> None:
+        """Delegate parsing to the registered datetime parser."""
+        self._build(build_datetime_parser)
 
 
 class BaseDTParser:
@@ -135,6 +142,10 @@ class BaseDTParser:
     @property
     def raw(self) -> str:
         return self._raw_text
+
+    @property
+    def output_format(self) -> str:
+        return self._output_format
 
     @property
     def rewritten(self) -> str:
@@ -407,6 +418,7 @@ class ISO8601DateParser(BaseDTParser):
             "%Y%m%d",
 
         )
+
 
 class ISO8601TimeParser(BaseDTParser):
     """Parse ISO 8601 datetime strings."""
@@ -1241,3 +1253,27 @@ class UserTimeParser(BaseDTParser):
 
         self._parse_user_12h_style()
         self._parse_user_24h_style()
+
+
+def build_datetime_parser(text):
+    """Return the first parser that successfully interprets the given datetime string."""
+    parser_classes = [
+        UserDTParser,
+        ISO8601DTParser,
+        RFC5322DTParser,
+        RFC7231DTParser,
+        RFC3339DTParser,
+        RFC2822DTParser,
+        RFC1123DTParser,
+        RFC1036DTParser,
+        RFC850DTParser,
+        RFC822DTParser,
+    ]
+
+    for parser_cls in parser_classes:
+        parser = parser_cls(text)
+        if parser:
+            return parser
+
+    # Fallback
+    return UserDTParser(text)
