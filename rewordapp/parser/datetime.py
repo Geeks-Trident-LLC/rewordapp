@@ -114,6 +114,18 @@ class DateTimeParser(BaseParser):
         self._build(build_datetime_parser)
 
 
+class DateParser(BaseParser):
+    """Parse a date string using the full parser registry."""
+
+    @property
+    def date(self) -> str:
+        return self._data
+
+    def _parse(self) -> None:
+        """Delegate parsing to the registered date parser."""
+        self._build(build_date_parser)
+
+
 class BaseDTParser:
     """Base class for parsing datetime components from text."""
 
@@ -1277,3 +1289,19 @@ def build_datetime_parser(text):
 
     # Fallback
     return UserDTParser(text)
+
+
+def build_date_parser(text):
+    """Return the first parser that successfully interprets a date-only string."""
+    parser_classes = [
+        UserDateParser,
+        ISO8601DateParser,
+    ]
+
+    for parser_cls in parser_classes:
+        parser = parser_cls(text)
+        if parser:
+            return parser
+
+    # Fallback: user-friendly date parser
+    return UserDateParser(text)

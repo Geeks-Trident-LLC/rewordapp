@@ -4,9 +4,9 @@ Unit tests for the `rewordapp.parser.datetime.DateTimeParser` class.
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/parser/datetime/test_rfc_822_dt_parser_class.py
+    $ pytest tests/unit/parser/datetime/test_datetime_parser_class.py
     or
-    $ python -m pytest tests/unit/parser/datetime/test_rfc_822_dt_parser_class.py
+    $ python -m pytest tests/unit/parser/datetime/test_datetime_parser_class.py
 """
 
 import pytest
