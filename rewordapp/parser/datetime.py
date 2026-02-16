@@ -987,3 +987,133 @@ class UserDTParser(BaseDTParser):
         self._parse_iso_style()
         self._parse_iso_week_style()
         self._parse_iso_ordinal_style()
+
+
+class UserDateParser(BaseDTParser):
+    """Parse Common User datetime strings."""
+
+    def _parse_user_date_style(self):
+        """Parse date‑only strings using common user‑typed formats."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Weekday, Month Day, Year
+        if re.match(r"(?i)[a-z]+,\s+[a-z]+\s+\d{1,2},\s+\d{4}", text):
+            self.parse_with_any(
+                "%A, %B %d, %Y",
+                "%a, %b %d, %Y",
+            )
+            return
+
+        # Month Day, Year
+        if re.match(r"(?i)[a-z]+\s+\d{1,2},\s+\d{4}", text):
+            self.parse_with_any(
+                "%B %d, %Y",
+                "%b %d, %Y",
+            )
+            return
+
+        # Day Month Year
+        if re.match(r"(?i)\d{1,2}\s+[a-z]+\s+\d{4}", text):
+            self.parse_with_any(
+                "%d %B %Y",
+                "%d %b %Y",
+            )
+            return
+
+        if re.fullmatch(r"\d\d?[/-]\d\d?[/-]\d{2}", text):
+            month = int(re.split(r"[/-]", text)[0])
+            if month > 12:
+                return
+            self.parse_with_any(
+                "%m/%d/%y",
+                "%m-%d-%y",
+            )
+            return
+
+    def _parse_compact_date_style(self):
+        """Parse compact date-only strings in YYYYMMDD format."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Must be exactly 8 digits: YYYYMMDD
+        if len(text) == 8 and text.isdigit():
+            month = int(text[4:6])
+            day = int(text[6:8])
+
+            # Basic sanity check
+            if month > 12 or day > 31:
+                return
+
+            self.parse_with_any("%Y%m%d")
+
+    def _parse_us_or_eu_date_style(self):
+        if self:
+            return
+
+        text = self._raw_text
+
+        if not re.match(r"(\d{1,2}[./-]){2}\d{4}", text):
+            return
+
+        # Match: us or european date style
+        if "." in text:
+            self.parse_with_any("%d.%m.%Y")
+            return
+        else:
+            month = int(re.split("[/-]+", text)[0])
+            if month <= 12:
+                self.parse_with_any(
+                    "%m-%d-%Y",
+                    "%m/%d/%Y",
+                )
+                return
+
+            self.parse_with_any(
+                "%d-%m-%Y",
+                "%d/%m/%Y",
+            )
+
+    def _parse_iso_date_style(self) -> None:
+        """Parse ISO-style date-only strings: week dates (YYYY-Www-d),
+        ordinal dates (YYYY-DDD), or calendar dates (YYYY-MM-DD)."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # --- ISO week date: YYYY-Www-d or YYYYWwwd --------------------------------
+        if re.match(r"\d{4}-?W\d{2}-?\d", text):
+            self.parse_with_any(
+                "%G-W%V-%u",  # hyphenated
+                "%GW%V%u",  # compact
+            )
+            return
+
+        # --- ISO ordinal date: YYYY-DDD or YYYYDDD --------------------------------
+        if re.match(r"\d{4}-?\d{3}", text):
+            self.parse_with_any(
+                "%Y-%j",  # hyphenated
+                "%Y%j",  # compact
+            )
+            return
+
+        # --- ISO calendar date: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD ----------------
+        if not re.match(r"\d{4}[./-]", text):
+            return
+
+        self.parse_with_any(
+            "%Y-%m-%d",
+            "%Y/%m/%d",
+            "%Y.%m.%d",
+        )
+
+    def _parse(self):
+        self._parse_user_date_style()
+        self._parse_compact_date_style()
+        self._parse_us_or_eu_date_style()
+        self._parse_iso_date_style()
