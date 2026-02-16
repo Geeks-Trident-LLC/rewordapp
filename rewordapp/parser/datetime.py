@@ -990,7 +990,7 @@ class UserDTParser(BaseDTParser):
 
 
 class UserDateParser(BaseDTParser):
-    """Parse Common User datetime strings."""
+    """Parse Common User date strings."""
 
     def _parse_user_date_style(self):
         """Parse date‑only strings using common user‑typed formats."""
@@ -1117,3 +1117,127 @@ class UserDateParser(BaseDTParser):
         self._parse_compact_date_style()
         self._parse_us_or_eu_date_style()
         self._parse_iso_date_style()
+
+
+class UserTimeParser(BaseDTParser):
+    """Parse Common User time strings."""
+
+    def _parse_user_12h_style(self) -> None:
+        """Parse common 12‑hour user-typed times containing AM/PM."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Must contain AM/PM (case‑insensitive)
+        if not re.search(r"(?i)[ap]m", text):
+            return
+
+        # Fractional seconds (e.g., 8:30:15.123 PM or 083015.123PM)
+        if "." in text:
+            self.parse_with_any(
+                "%I:%M:%S.%f %p",
+                "%I:%M:%S.%f %p %z",
+                "%I:%M:%S.%f %p %Z",
+
+                "%I%M%S.%f%p",
+                "%I%M%S.%f%p%z",
+                "%I%M%S.%f%p%Z",
+            )
+            return
+
+        # HH:MM:SS AM/PM
+        if re.match(r"(\d{1,2}:){2}\d{1,2}\s", text):
+            self.parse_with_any(
+                "%I:%M:%S %p",
+                "%I:%M:%S %p %z",
+                "%I:%M:%S %p %Z",
+            )
+            return
+
+        # HH:MM AM/PM
+        if re.match(r"\d{1,2}:\d{1,2}\s", text):
+            self.parse_with_any(
+                "%I:%M %p",
+                "%I:%M %p %z",
+                "%I:%M %p %Z",
+            )
+            return
+
+        # Compact or minimal forms (H PM, HPM, HHMMSSPM, etc.)
+        self.parse_with_any(
+            "%I %p",
+            "%I%p",
+            "%I%M%p",
+            "%I%M%S%p",
+
+            "%I %p %z",
+            "%I%p%z",
+            "%I%M%p%z",
+            "%I%M%S%p%z",
+
+            "%I %p %Z",
+            "%I%p%Z",
+            "%I%M%p%Z",
+            "%I%M%S%p%Z",
+        )
+
+    def _parse_user_24h_style(self) -> None:
+        """Parse common user-typed 24‑hour time strings."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # Fractional seconds (e.g., 12:34:56.789 or 123456.789)
+        if "." in text:
+            self.parse_with_any(
+                "%H:%M:%S.%f",
+                "%H:%M:%S.%f %z",
+                "%H:%M:%S.%f %Z",
+
+                "%H%M%S.%f",
+                "%H%M%S.%f%z",
+                "%H%M%S.%f%Z",
+            )
+            return
+
+        # HH:MM:SS
+        if re.match(r"(\d{1,2}:){2}\d{1,2}", text):
+            self.parse_with_any(
+                "%H:%M:%S",
+                "%H:%M:%S %z",
+                "%H:%M:%S %Z",
+            )
+            return
+
+        # HH:MM
+        if re.match(r"\d{1,2}:\d{1,2}", text):
+            self.parse_with_any(
+                "%H:%M",
+                "%H:%M %z",
+                "%H:%M %Z",
+            )
+            return
+
+        # Compact forms: H, HHMM, HHMMSS, with optional timezone
+        self.parse_with_any(
+            "%H",
+            "%H%M",
+            "%H%M%S",
+
+            "%H%z",
+            "%H%M%z",
+            "%H%M%S%z",
+
+            "%H%Z",
+            "%H%M%Z",
+            "%H%M%S%Z",
+        )
+
+    def _parse(self):
+        if self:
+            return
+
+        self._parse_user_12h_style()
+        self._parse_user_24h_style()
