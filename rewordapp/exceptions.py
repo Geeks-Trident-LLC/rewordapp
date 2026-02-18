@@ -10,3 +10,11 @@ class InvalidRulesFormat(Exception):
     """
     Raised when the rules format is invalid.
     """
+
+
+class RewriteRuleError(Exception):
+    """Base exception for rewrite rule validation and processing errors."""
+
+
+class DateTimeRuleError(RewriteRuleError):
+    """Raised when datetime rewrite rules are invalid or cannot be applied."""
