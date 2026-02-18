@@ -4,6 +4,46 @@ rewordapp.rewrite.fext
 
 Utilities for inspecting and classifying file name extensions.
 """
+import re
+
+
+
+COMMON_TLDS = [
+    "com", "org", "net", "info", "biz", "xyz", "online", "site",
+    "app", "dev", "io", "ai",
+    "us", "uk", "ca", "au", "de", "fr", "jp", "cn", "in", "nl", "br",
+    "edu", "gov", "mil", "int",
+]
+
+
+COMMON_SUBDOMAINS = [
+    # Primary web entry
+    "www", "web", "home", "app",
+
+    # API & developer
+    "api", "dev", "test", "staging", "beta",
+    "docs", "developer", "developers",
+
+    # Authentication & accounts
+    "auth", "login", "accounts", "id", "sso",
+
+    # Content & media
+    "blog", "news", "media", "static", "cdn", "assets",
+
+    # Admin & support
+    "admin", "portal", "support", "help", "status", "dashboard",
+
+    # Mail & communication
+    "mail", "smtp", "imap", "pop", "mx", "webmail",
+
+    # Security / infrastructure
+    "vpn", "proxy", "gateway", "edge",
+
+    # Language / region (common)
+    "en", "fr", "de", "es", "vi", "ja", "zh",
+    "us", "uk", "eu", "ca", "jp", "au",
+]
+
 
 class FileExtension:
     TEXT_DATA_EXTENSIONS = {
@@ -930,3 +970,36 @@ def has_known_extension(value: str) -> bool:
         return is_known_extension(ext)
 
     return is_known_extension(value)
+
+
+def is_valid_hostname(host: str) -> bool:
+    """Return True if the hostname matches a basic DNS-style pattern."""
+    pattern = r"(?i)([a-z][a-z0-9-]+[.])+[a-z][a-z0-9-]+"
+    return bool(re.fullmatch(pattern, host))
+
+
+def has_common_tld(host: str) -> bool:
+    """Return True if the hostname ends with a known TLD."""
+    if not is_valid_hostname(host):
+        return False
+
+    _, tld = host.rsplit(".", 1)
+    return tld.lower() in {t.lower() for t in COMMON_TLDS}
+
+
+def has_common_subdomain(host: str) -> bool:
+    """Return True if the hostname begins with a known subdomain."""
+    if not has_common_tld(host):
+        return False
+
+    if host.count(".") < 2:
+        return False
+
+    subdomain, _ = host.split(".", 1)
+
+    for prefix in COMMON_SUBDOMAINS:
+        pattern = fr"(?i){prefix}[a-z0-9]*"
+        if re.fullmatch(pattern, subdomain):
+            return True
+
+    return False

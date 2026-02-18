@@ -106,11 +106,21 @@ class URLParser:
         if not match:
             return
 
-        if checker.has_known_extension(match.group("host")):
+        host = match.group("host")
+
+        # Validate TLD
+        if not checker.has_common_tld(host):
             return
 
-        self._prefix = self._text[:match.start()] or ""
+        # Validate subdomain (if present)
+        if host.count(".") > 1 and not checker.has_common_subdomain(host):
+            return
+
+        # Extract prefix/suffix around the matched URL
+        self._prefix = self._text[: match.start()] or ""
         self._suffix = self._text[match.end():] or ""
+
+        # Apply parsed fields to internal state
         self._apply_parsed_fields(match.groupdict())
 
     def generate_new(self):
