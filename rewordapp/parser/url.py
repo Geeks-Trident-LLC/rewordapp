@@ -8,10 +8,10 @@ mapped or obfuscated URL variants.
 
 import re
 
-import rewordapp.rewritten as rewritten
+import rewordapp.rewrite.rewritten as rewritten
 from rewordapp.deps import genericlib_DotObject as DotObject
 
-import rewordapp.fext as fext
+import rewordapp.rewrite.checker as checker
 
 
 class URLParser:
@@ -106,7 +106,7 @@ class URLParser:
         if not match:
             return
 
-        if fext.has_known_extension(match.group("host")):
+        if checker.has_known_extension(match.group("host")):
             return
 
         self._prefix = self._text[:match.start()] or ""

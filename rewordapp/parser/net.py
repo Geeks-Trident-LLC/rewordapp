@@ -9,7 +9,7 @@ Network parsing utilities for RewordApp.
 import re
 import ipaddress
 
-import rewordapp.rewritten as rewritten
+import rewordapp.rewrite.rewritten as rewritten
 from rewordapp.deps import genericlib_DotObject as DotObject
 
 

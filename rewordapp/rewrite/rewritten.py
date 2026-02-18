@@ -1,6 +1,6 @@
 """
-rewordapp.rewritten
-===================
+rewordapp.rewrite.rewritten
+===========================
 
 Utilities for generating randomized character‑substitution maps used for
 rewriting or obfuscating text components such as letters, digits, and URL parts.
@@ -12,8 +12,8 @@ import re
 import ipaddress
 
 from rewordapp import utils
-from rewordapp.fext import has_known_extension
-from rewordapp.mapping import generate_random_binary, Mapping, apply_mapping
+from rewordapp.rewrite.checker import has_known_extension
+from rewordapp.rewrite.mapping import generate_random_binary, Mapping, apply_mapping
 
 
 def new_word(text: str) -> str:

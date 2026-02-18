@@ -1,6 +1,6 @@
 """
-rewordapp.mapping
-=================
+rewordapp.rewrite.mapping
+=========================
 
 Provides the character‑mapping infrastructure for RewordApp.
 """

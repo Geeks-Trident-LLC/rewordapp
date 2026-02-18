@@ -6,7 +6,8 @@ File permission parsing and rewriting utilities.
 """
 
 import re
-from rewordapp import rewritten
+from rewordapp.rewrite import rewritten
+
 
 class FilePermissionParser:
 

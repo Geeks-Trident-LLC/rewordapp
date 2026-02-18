@@ -8,7 +8,7 @@ number parsing and rewriting utilities.
 import re
 import string
 
-import rewordapp.rewritten as rewritten
+import rewordapp.rewrite.rewritten as rewritten
 
 class NumberParser:
 

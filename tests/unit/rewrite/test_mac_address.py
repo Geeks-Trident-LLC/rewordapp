@@ -1,16 +1,16 @@
 """
-Unit tests for the `rewordapp.rewritten.mac_address` module.
+Unit tests for the `rewordapp.rewritten.new_mac_address` function.
 
 Usage
 -----
 Run pytest in the project root to execute these tests:
-    $ pytest tests/unit/rewritten/test_mac_address.py
+    $ pytest tests/unit/rewrite/test_new_mac_address.py
     or
-    $ python -m pytest tests/unit/rewritten/test_mac_address.py
+    $ python -m pytest tests/unit/rewrite/test_new_mac_address.py
 """
 
 import pytest
-import rewordapp.rewritten as rewritten
+import rewordapp.rewrite.rewritten as rewritten
 
 
 @pytest.mark.parametrize(

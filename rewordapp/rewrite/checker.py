@@ -1,6 +1,6 @@
 """
-rewordapp.fext
-==============
+rewordapp.rewrite.fext
+======================
 
 Utilities for inspecting and classifying file name extensions.
 """
@@ -606,8 +606,8 @@ class FileExtension:
         "class": "java-bytecode",
 
         # .NET / CLR
-        "dll": "dotnet-library",
-        "exe": "dotnet-executable",
+        # "dll": "dotnet-library",
+        # "exe": "dotnet-executable",
 
         # Compiled bytecode / VM formats
         "pyc": "python-bytecode",
@@ -617,7 +617,7 @@ class FileExtension:
         # Firmware / embedded binaries
         "hex": "intel-hex",
         "elf": "elf-binary",
-        "bin": "raw-binary",
+        # "bin": "raw-binary",
         "img": "disk-image",
         "rom": "firmware",
         "iso": "disk-image",
@@ -626,7 +626,7 @@ class FileExtension:
         "apk": "android-package",
         "aab": "android-app-bundle",
         "dex": "dalvik-executable",
-        "so": "android-native-library",
+        # "so": "android-native-library",
 
         # iOS
         "ipa": "ios-application",
@@ -696,7 +696,7 @@ class FileExtension:
         # Windows system files
         "reg": "registry",
         "inf": "windows-driver-inf",
-        "ini": "windows-ini",
+        # "ini": "windows-ini",
         "manifest": "windows-manifest",
 
         # Application configs
@@ -826,7 +826,7 @@ class FileExtension:
         "aof": "redis-append-log",
 
         # Cassandra
-        "db": "cassandra-sstable",
+        # "db": "cassandra-sstable",
         "sst": "cassandra-sstable",
         "crc32": "cassandra-checksum",
         "index": "cassandra-index",
@@ -835,7 +835,7 @@ class FileExtension:
 
         # LevelDB / RocksDB
         "ldb": "leveldb",
-        "sst": "rocksdb-sstable",
+        # "sst": "rocksdb-sstable",
 
         # Firebird / InterBase
         "fdb": "firebird",
@@ -846,7 +846,7 @@ class FileExtension:
         "accdb": "access",
 
         # dBase / FoxPro
-        "dbf": "dbase",
+        # "dbf": "dbase",
         "cdx": "dbase-index",
         "fpt": "foxpro-memo",
 
@@ -910,10 +910,8 @@ class FileExtension:
     }
 
 
-def check(ext: str) -> bool:
-    """
-    Return True if the extension exists in any *_EXTENSIONS mapping.
-    """
+def is_known_extension(ext: str) -> bool:
+    """Return True if the extension exists in any *_EXTENSIONS mapping."""
     ext = ext.lower().lstrip(".")
 
     for attr in dir(FileExtension):
@@ -925,8 +923,10 @@ def check(ext: str) -> bool:
     return False
 
 
-def has_known_extension(fn_or_ext: str) -> bool:
-    if "." in fn_or_ext:
-        _, ext = fn_or_ext.rsplit(".", 1)
-        return check(ext)
-    return check(fn_or_ext)
+def has_known_extension(value: str) -> bool:
+    """Return True if the filename or extension is recognized."""
+    if "." in value:
+        _, ext = value.rsplit(".", 1)
+        return is_known_extension(ext)
+
+    return is_known_extension(value)

@@ -3,7 +3,7 @@
 import yaml
 import re
 
-from rewordapp import mapping
+from rewordapp.rewrite import mapping
 import rewordapp.exceptions as exceptions
 
 
