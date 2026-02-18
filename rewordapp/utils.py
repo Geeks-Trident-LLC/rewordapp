@@ -28,3 +28,19 @@ def split_by_matches(text, pattern=r"(?u)\s+"):
 def extract_non_whitespace(text: str) -> list[str]:
     """Return all contiguous non‑whitespace segments from the text."""
     return re.findall(r"(?u)\S+", text)
+
+
+def extract_segments(line: str, parts: list[str]):
+    """Split the line into (left, matched subcontent, right) around the given parts."""
+    escaped = r"\s+".join(re.escape(p) for p in parts)
+    pattern = rf"(?P<left>.*?)(?P<subcontent>{escaped})(?P<right>.*)"
+
+    match = re.search(pattern, line)
+    if match:
+        return (
+            match.group("left"),
+            match.group("subcontent"),
+            match.group("right"),
+        )
+
+    return line, "", ""

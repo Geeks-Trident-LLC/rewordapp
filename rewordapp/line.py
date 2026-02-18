@@ -9,6 +9,10 @@ Utilities for splitting a text line into content and newline parts.
 import re
 
 from rewordapp.token import build_token
+from rewordapp.token import build_fallback_token
+from rewordapp.token import build_datetime_token
+
+from rewordapp.rules import RewriteRules
 
 import rewordapp.utils as utils
 
@@ -63,16 +67,45 @@ class Line:
         return self._rewritten
 
     def tokenize(self):
-        """Split content into tokens and update the token registry."""
-
+        """Tokenize content, applying datetime rewrite when applicable."""
         if not self.is_nonempty:
             return []
 
         tokens = []
 
-        parts = utils.split_by_matches(self._content, r"(?u)\s+")
-        for part in parts:
-            token = build_token(part, rules=self.rules)
-            tokens.append(token)
+        # Determine whether datetime rewriting is available
+        dt_rule = (
+            self.rules.get_datetime_token_rule()
+            if isinstance(self.rules, RewriteRules)
+            else None
+        )
+
+        # If datetime rule exists, attempt datetime‑aware tokenization
+        if dt_rule:
+            parts = utils.extract_non_whitespace(self._content)
+            dt_segments = dt_rule.extract_segments(parts)
+            left, dt_text, right = utils.extract_segments(self._content,
+                                                          dt_segments)
+            dt_token = build_datetime_token(dt_text, rules=self.rules)
+
+            if dt_token:
+                # Left side
+                if left:
+                    for chunk in utils.split_by_matches(left, r"(?u)\s+"):
+                        tokens.append(build_token(chunk, rules=self.rules))
+
+                # Datetime token
+                tokens.append(dt_token)
+
+                # Right side
+                if right:
+                    for chunk in utils.split_by_matches(right, r"(?u)\s+"):
+                        tokens.append(build_token(chunk, rules=self.rules))
+
+                return tokens
+
+        # Fallback: simple whitespace tokenization
+        for chunk in utils.split_by_matches(self._content, r"(?u)\s+"):
+            tokens.append(build_token(chunk, rules=self.rules))
 
         return tokens

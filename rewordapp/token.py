@@ -6,6 +6,7 @@ from rewordapp.parser.url import URLParser
 from rewordapp.parser.number import NumberParser
 from rewordapp.parser.word import WordParser
 from rewordapp.parser.fperm import FilePermissionParser
+from rewordapp.parser.datetime import DateTimeParser
 
 from rewordapp.rules import RewriteRules
 
@@ -108,11 +109,11 @@ class BaseToken:
         self._masked = self._text
 
     def _update_parsed_node(self, parser_cls) -> None:
-        """Instantiate and store a parsed node if the parser produces a match."""
+        """Instantiate and store a parsed node, marking it as matched when appropriate."""
         node = parser_cls(self._text)
         if node:
-            self._matched = True
             self.parsed_node = node
+            self._matched = True
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +188,26 @@ class FilePermissionToken(BaseToken):
         self._update_parsed_node(FilePermissionParser)
 
 
+class DateTimeToken(BaseToken):
+
+    @property
+    def rewritten(self):
+        if not self:
+            return self.raw
+        dt_token_rule = self.rules.get_datetime_token_rule()
+        if dt_token_rule:
+            if dt_token_rule.is_rewrite:
+                self._rewritten = self.parsed_node.rewritten
+                return self._rewritten
+            else:
+                return self.raw
+        return self.raw
+
+    """Token representing a datetime."""
+    def _detect(self) -> None:
+        self._update_parsed_node(DateTimeParser)
+
+
 def build_token(text: str, rules: dict | None = None):
     """Return the first token type that matches the given text."""
     token_types = [
@@ -208,3 +229,12 @@ def build_token(text: str, rules: dict | None = None):
 
     return FallbackToken(text, rules=rules)
 
+
+def build_fallback_token(text: str):
+    """Create and return a fallback token for unmatched input."""
+    return FallbackToken(text)
+
+
+def build_datetime_token(text: str, rules: dict | None = None):
+    """Create and return a datetime token for matched input."""
+    return DateTimeToken(text, rules=rules)
