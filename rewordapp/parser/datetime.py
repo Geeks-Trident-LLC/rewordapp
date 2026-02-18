@@ -204,7 +204,6 @@ class BaseDTParser:
             if re.match(pattern, raw_seg) and re.match(pattern, fmt_seg):
                 left_r, mid_r, right_r = utils.split_by_matches(raw_seg)
                 left_f, mid_f, right_f = utils.split_by_matches(fmt_seg)
-
                 if len(mid_r) == len(mid_f):
                     fmt_parts[idx] = f"{left_f}{mid_f}{int(right_f)}"
                 elif len(mid_r) > len(mid_f):
@@ -256,9 +255,10 @@ class BaseDTParser:
         return "".join(fmt_parts)
 
     def _generate_random_datetime(self) -> datetime:
-        """Return a randomized datetime not exceeding the original datetime."""
-        base = self._dt
+        """Return a randomized datetime that never exceeds the original."""
+        base = self._dt.replace(tzinfo=None)
 
+        # Initial randomized candidate
         candidate = datetime(
             year=base.year,
             month=random_month(base.month),
@@ -269,13 +269,23 @@ class BaseDTParser:
             microsecond=randint(0, 999999),
         )
 
-        # If already earlier, return as-is
+        # If already earlier, return immediately
         if candidate < base:
             return candidate
 
-        # Otherwise push it back by a random number of days
-        day_diff = int((candidate - base).total_seconds() // 86400)
-        return candidate - timedelta(days=day_diff + randint(5, 30))
+        # Ensure month/day alignment before searching backward
+        candidate = candidate.replace(month=base.month, day=base.day) - timedelta(days=randint(1, 20))
+
+        # Walk backward until month/day digit-width matches the base
+        for _ in range(360):
+            candidate -= timedelta(days=1)
+            if (
+                    len(str(candidate.month)) == len(str(base.month))
+                    and len(str(candidate.day)) == len(str(base.day))
+            ):
+                return candidate
+
+        return candidate
 
     def _parse(self):
         """Subclasses must implement parsing logic."""
