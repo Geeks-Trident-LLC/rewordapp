@@ -1,28 +1,32 @@
 
 import string
 import re
-from datetime import datetime
-import random
+from datetime import datetime, timedelta
+from random import randint
 
 from rewordapp import utils
 
 
-def random_day_or_month(base: int) -> int:
-    """Return a randomized day/month value based on the given base."""
-    if base == 1:
-        return 1
-    if base < 10:
-        return random.randint(1, base)
-    if base < 29:
-        return random.randint(10, base)
-    return random.randint(10, 29)
+def random_day(base: int) -> int:
+    """Return a randomized day value different from the base."""
+    return randint(1, 9) if base < 10 else randint(10, 28)
 
 
-def random_time_component(base: int) -> int:
-    """Return a randomized hour/minute/second based on the given base."""
+def random_month(base: int) -> int:
+    """Return a randomized month value different from the base."""
+    return randint(1, 9) if base < 10 else randint(10, 12)
+
+
+def random_hour(base: int) -> int:
+    """Return a randomized hour value different from the base."""
     if base < 10:
-        return random.randint(0, base)
-    return random.randint(10, base)
+        return randint(0, 9)
+    return randint(10, 12) if base < 13 else randint(10, 23)
+
+
+def random_minute_or_second(base: int) -> int:
+    """Return a randomized minute/second value different from the base."""
+    return randint(1, 9) if base < 10 else randint(1, 59)
 
 
 class BaseParser:
@@ -72,7 +76,7 @@ class BaseParser:
     @property
     def rewritten(self):
         if not self:
-            return ""
+            return self._raw_text
         return f"{self._prefix}{self._node.rewritten}{self._suffix}"
 
     def _build(self, func):
@@ -100,6 +104,12 @@ class BaseParser:
 
     def _parse(self):
         NotImplementedError("Subclasses must implement _parse()")
+
+    def generate_new(self):
+        if not self:
+            return self.__class__(self.raw)
+        rewritten = self.rewritten
+        return self.__class__(rewritten)
 
 
 class DateTimeParser(BaseParser):
@@ -146,15 +156,7 @@ class BaseDTParser:
         self._is_parsed = False
 
         self._output_format = ""
-
-        now = datetime.now()
-        self._year = now.year
-        self._month = now.month
-        self._day = now.day
-        self._hour = 0
-        self._minute = 0
-        self._second = 0
-
+        self._dt = datetime.now()
         self._parse()
 
     def __bool__(self) -> bool:
@@ -173,47 +175,107 @@ class BaseDTParser:
 
     @property
     def rewritten(self) -> str:
-        """Return rewritten datetime string, or raw text if parsing failed."""
+        """Return rewritten datetime text, preserving original segment widths."""
         if not self:
             return self._raw_text
 
-        smaller_dt = self._generate_smaller_datetime()
-        return smaller_dt.strftime(self._output_format)
+        randomized = self._generate_random_datetime()
+        formatted = randomized.strftime(self._output_format)
 
-    def _generate_smaller_datetime(self, max_attempts: int = 100) -> datetime:
-        """Return a randomized datetime strictly earlier than the parsed one."""
-        original = datetime(
-            year=self._year,
-            month=self._month,
-            day=self._day,
-            hour=self._hour,
-            minute=self._minute,
-            second=self._second,
-            microsecond=random.randint(0, 999999),
+        step1 = self._match_prefixed_number_widths(formatted)
+        step2 = self._match_datetime_component_widths(step1)
+
+        return step2
+
+    def _match_prefixed_number_widths(self, formatted_text: str) -> str:
+        """Match widths of letter‑prefixed numeric segments to those in the raw text."""
+        raw = self._raw_text
+        pattern = r"[bcdeghilnprtuvy]\s+\d+"
+
+        raw_parts = utils.split_by_matches(raw, pattern)
+        fmt_parts = utils.split_by_matches(formatted_text, pattern)
+
+        if len(raw_parts) != len(fmt_parts):
+            return formatted_text
+
+        for idx, raw_seg in enumerate(raw_parts):
+            fmt_seg = fmt_parts[idx]
+
+            if re.match(pattern, raw_seg) and re.match(pattern, fmt_seg):
+                left_r, mid_r, right_r = utils.split_by_matches(raw_seg)
+                left_f, mid_f, right_f = utils.split_by_matches(fmt_seg)
+
+                if len(mid_r) == len(mid_f):
+                    fmt_parts[idx] = f"{left_f}{mid_f}{int(right_f)}"
+                elif len(mid_r) > len(mid_f):
+                    fmt_parts[idx] = f"{left_f}{mid_r}{int(right_f)}"
+
+        return "".join(fmt_parts)
+
+    def _match_datetime_component_widths(self, formatted_text: str) -> str:
+        """Match widths of date/time components to those in the raw text."""
+        raw = self._raw_text
+
+        pattern = (
+            r"((\d{1,2}[/.-]){2}\d{2,4})|"  # 12/05/2024 or 12-05-24
+            r"(\d{2,4}([/.-]\d{1,2}){2})|"  # 2024/05/12
+            r"(\d{1,2}:\d{1,2}(:\d{1,2})?)"  # 12:30 or 12:30:45
         )
 
-        def random_candidate() -> datetime:
-            return datetime(
-                year=self._year,
-                month=random_day_or_month(self._month),
-                day=random_day_or_month(self._day),
-                hour=random_time_component(self._hour),
-                minute=random_time_component(self._minute),
-                second=random_time_component(self._second),
-                microsecond=random.randint(0, 999999),
-            )
+        raw_parts = utils.split_by_matches(raw)
+        fmt_parts = utils.split_by_matches(formatted_text)
 
-        candidate = random_candidate()
-        if candidate < original:
+        if len(raw_parts) != len(fmt_parts):
+            return formatted_text
+
+        for idx, raw_seg in enumerate(raw_parts):
+            fmt_seg = fmt_parts[idx]
+
+            if re.match(pattern, raw_seg) and re.match(pattern, fmt_seg):
+                raw_groups = utils.split_by_matches(raw_seg, pattern=r"[/.:-]")
+                fmt_groups = utils.split_by_matches(fmt_seg, pattern=r"[/.:-]")
+
+                for g_idx, raw_item in enumerate(raw_groups):
+                    fmt_item = fmt_groups[g_idx]
+
+                    if raw_item.isdigit() and fmt_item.isdigit():
+                        if len(raw_item) < len(fmt_item):
+                            trimmed = str(int(fmt_item))  # remove leading zeros
+                            fmt_groups[g_idx] = (
+                                trimmed if len(trimmed) == len(raw_item)
+                                else trimmed[:len(raw_item)]
+                            )
+
+                new_fmt_seg = "".join(fmt_groups)
+
+                if len(new_fmt_seg) == len(raw_seg):
+                    fmt_parts[idx] = new_fmt_seg
+                    if idx > 0:
+                        fmt_parts[idx - 1] = raw_parts[idx - 1]
+
+        return "".join(fmt_parts)
+
+    def _generate_random_datetime(self) -> datetime:
+        """Return a randomized datetime not exceeding the original datetime."""
+        base = self._dt
+
+        candidate = datetime(
+            year=base.year,
+            month=random_month(base.month),
+            day=random_day(base.day),
+            hour=random_hour(base.hour),
+            minute=random_minute_or_second(base.minute),
+            second=random_minute_or_second(base.second),
+            microsecond=randint(0, 999999),
+        )
+
+        # If already earlier, return as-is
+        if candidate < base:
             return candidate
 
-        for _ in range(max_attempts):
-            candidate = random_candidate()
-            if candidate < original:
-                return candidate
-
-        # Fallback: return last candidate even if not smaller
-        return candidate
+        # Otherwise push it back by a random number of days
+        day_diff = int((candidate - base).total_seconds() // 86400)
+        return candidate - timedelta(days=day_diff + randint(5, 30))
 
     def _parse(self):
         """Subclasses must implement parsing logic."""
@@ -261,12 +323,7 @@ class BaseDTParser:
         # --- Store parsed components ---
 
         self._output_format = output_format
-        self._year = dt.year
-        self._month = dt.month
-        self._day = dt.day
-        self._hour = dt.hour
-        self._minute = dt.minute
-        self._second = dt.second
+        self._dt = dt
         self._is_parsed = True
 
         return True
@@ -342,20 +399,6 @@ class RFC3339DTParser(BaseDTParser):
 
 class RFC7231DTParser(BaseDTParser):
     """Parse RFC 7231–style datetime strings."""
-
-    @property
-    def rewritten(self) -> str:
-        """Return rewritten datetime string with RFC 1123 asctime() spacing fix."""
-        result = super().rewritten
-
-        # Fix asctime() day spacing: "Feb 07" → "Feb  7"
-        if self._output_format == "%a %b %d %H:%M:%S %Y":
-            # If the day is zero‑padded, replace " 0" with "  "
-            # Example: "Sat Feb 07 12:57:36 2026" → "Sat Feb  7 12:57:36 2026"
-            if len(result) > 8 and result[8] == "0":
-                return result[:8] + " " + result[9:]
-
-        return result
 
     def _parse(self):
         self.parse_with_any(
@@ -586,6 +629,7 @@ class UserDTParser(BaseDTParser):
                     "%A %I%p",
                     "%a %I%p",
                 )
+                return
 
     def _parse_other_style(self):
         """Parse datetime strings using month/weekday names in various layouts."""
@@ -690,6 +734,8 @@ class UserDTParser(BaseDTParser):
                 "%d %b %Y %H:%M %z",
                 "%d %b %Y %H:%M %Z",
             )
+            return
+
 
     def _parse_compact_numeric_style(self) -> None:
         """Parse compact numeric datetime strings (YYYYMMDDHHMM...)."""
@@ -1014,6 +1060,29 @@ class UserDTParser(BaseDTParser):
                 self.parse_with_any(*compact_formats)
             return
 
+    def _parse_custom_case(self):
+        """Parse month–day formats using 12‑hour or 24‑hour patterns."""
+        if self:
+            return
+
+        text = self._raw_text
+
+        # 12‑hour formats with AM/PM
+        if re.search(r"(?i)[ap]m", text):
+            self.parse_with_any(
+                "%b %d %I %p",
+                "%b %d %I:%M %p",
+                "%b %d %I:%M:%S %p %z",
+            )
+            return
+
+        # 24‑hour formats
+        self.parse_with_any(
+            "%b %d %H",
+            "%b %d %H:%M",
+            "%b %d %H:%M:%S",
+        )
+
     def _parse(self):
         self._parse_12h_style()
         self._parse_other_style()
@@ -1023,6 +1092,7 @@ class UserDTParser(BaseDTParser):
         self._parse_iso_style()
         self._parse_iso_week_style()
         self._parse_iso_ordinal_style()
+        self._parse_custom_case()
 
 
 class UserDateParser(BaseDTParser):
@@ -1293,7 +1363,6 @@ def build_datetime_parser(text):
         RFC850DTParser,
         RFC822DTParser,
     ]
-
     for parser_cls in parser_classes:
         parser = parser_cls(text)
         if parser:
