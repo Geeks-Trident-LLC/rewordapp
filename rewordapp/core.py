@@ -40,6 +40,10 @@ class RewordBuilder:
 
         self.rules.refresh()
 
+        unchanged_rule = self.rules.get_unchanged_lines_rule()
+        if unchanged_rule:
+            unchanged_rule.apply_unchanged_lines(self._lines)
+
         parts = []
         for line in self._lines:
             parts.append(line.rewritten)

@@ -9,7 +9,6 @@ Utilities for splitting a text line into content and newline parts.
 import re
 
 from rewordapp.token import build_token
-from rewordapp.token import build_fallback_token
 from rewordapp.token import build_datetime_token
 
 from rewordapp.rules import RewriteRules
@@ -25,6 +24,7 @@ class Line:
         self._content = text.rstrip("\r\n")
         self._newline = text[len(self._content):]
         self._rewritten = ""
+        self._unchanged = False
         self.rules = rules if isinstance(rules, dict) else {}
 
     @property
@@ -53,8 +53,20 @@ class Line:
         return self._newline
 
     @property
+    def unchanged(self) -> bool:
+        return self._unchanged
+
+    @unchanged.setter
+    def unchanged(self, value: bool) -> None:
+        self._unchanged = value
+
+    @property
     def rewritten(self) -> str:
         """Return the rewritten line content, generating it once and caching the result."""
+
+        if self.unchanged:
+            return self.content
+
         # Return cached value if already computed
         if self._rewritten:
             return self._rewritten

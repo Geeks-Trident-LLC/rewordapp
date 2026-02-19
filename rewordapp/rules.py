@@ -2,10 +2,11 @@
 
 import yaml
 import re
+import string
 
+from rewordapp import utils
 from rewordapp.rewrite import mapping
 import rewordapp.exceptions as exceptions
-
 
 
 def load_rules(rules_str: str) -> dict:
@@ -90,10 +91,14 @@ class RewriteRules(dict):
            mapping.refresh()
 
     def get_datetime_token_rule(self):
-        rule_value = self.get("rewrite_datetime", "") or ""
-        if rule_value:
-            return DateTimeTokenRule(rule_value)
-        return None
+        """Return a DateTimeTokenRule if rewrite_datetime is defined."""
+        value = self.get("rewrite_datetime") or ""
+        return DateTimeTokenRule(value) if value else None
+
+    def get_unchanged_lines_rule(self):
+        """Return an UnchangedLinesRule if unchanged_lines is defined."""
+        value = self.get("unchanged_lines")
+        return UnchangedLinesRule(value) if value else None
 
 
 class DateTimeTokenRule:
@@ -165,7 +170,8 @@ class DateTimeTokenRule:
             return
 
         if not isinstance(self._rule_value, str):
-            msg = "rewrite_datetime must be 'true|false, index, width'"
+            msg = ("rewrite_datetime must be 'flag, index, width' "
+                   "where flag is one of: yes, no, true, false")
             raise exceptions.DateTimeRuleError(msg)
 
         pattern = r"""(?ix)
@@ -176,7 +182,8 @@ class DateTimeTokenRule:
 
         match = re.fullmatch(pattern, self._rule_value.strip())
         if not match:
-            msg = "rewrite_datetime must be 'flag, index, width'"
+            msg = ("rewrite_datetime must be 'flag, index, width' "
+                   "where flag is one of: yes, no, true, false")
             raise exceptions.DateTimeRuleError(msg)
 
         flag = match.group("flag").lower()
@@ -218,3 +225,171 @@ class DateTimeTokenRule:
         width = 1 if self._width is None else abs(int(self._width))
 
         return items[start_index:start_index + width]
+
+
+class UnchangedLinesRule:
+    def __init__(self, rule_value):
+        self._rule_value = rule_value
+        self._is_parsed = False
+        self._indices = []
+        self._pairs = []
+
+        self._parse()
+
+    def __bool__(self):
+        return self._is_parsed
+
+    def __len__(self):
+        return bool(self._is_parsed)
+
+    @property
+    def raw(self):
+        return self._rule_value
+
+    @property
+    def indices(self):
+        return self._indices
+
+    @property
+    def pairs(self):
+        return self._pairs
+
+    def _to_index_or_pattern(self, value):  # noqa
+        """Convert a value into an index (int) or a regex-like pattern."""
+        if value is None:
+            return "eof"
+
+        text = str(value).strip()
+
+        # Case 1: signed integer index
+        if re.fullmatch(r"(?i)[+-]\d+", text):
+            return int(text)
+
+        # Case 2: build a tokenized pattern
+        tokens = []
+        punct = f"[{re.escape(string.punctuation)}]+"
+        token_pattern = rf"(?i)\s+|[a-z]+|{punct}|[0-9]+"
+
+        for token in utils.split_by_matches(text, pattern=token_pattern):
+            if re.fullmatch(punct, token):
+                tokens.append(re.escape(token))
+            elif re.fullmatch(r"\d+", token):
+                tokens.append(r"[0-9]+")
+            else:
+                tokens.append(token)
+
+        return "".join(tokens)
+
+
+    def _validate_ranges(self) -> None:
+        """Validate unchanged_lines as [[start, stop], ...] pairs."""
+        msg = (
+            "unchanged_lines must be in the format [[start, stop], ...] where "
+            "start is an integer or string, and stop is an integer, string, or null"
+        )
+
+        raw = self.raw
+
+        # Case 1: list of pairs
+        if isinstance(raw, list) and all(
+                isinstance(pair, list) and len(pair) == 2 for pair in raw):
+            for start, stop in raw:
+                if not isinstance(start, (int, str)):
+                    raise exceptions.UnchangedLinesError(msg)
+                if not (isinstance(stop, (int, str)) or stop is None):
+                    raise exceptions.UnchangedLinesError(msg)
+            return
+
+        # Case 2: single pair [start, stop]
+        if isinstance(raw, list) and len(raw) == 2:
+            start, stop = raw
+            if isinstance(start, (int, str)) and (
+                    isinstance(stop, (int, str)) or stop is None):
+                return
+            raise exceptions.UnchangedLinesError(msg)
+
+        # Anything else is invalid
+        raise exceptions.UnchangedLinesError(msg)
+
+    def _parse_list_type(self) -> None:
+        """Parse unchanged_lines list into normalized [start, stop] pairs."""
+        if not self.raw:
+            return
+
+        if isinstance(self.raw, (str, int)):
+            return
+        self._validate_ranges()
+        self._pairs.clear()
+
+        # Normalize: either a list of pairs or a single pair
+        pairs = self.raw if isinstance(self.raw[0], list) else [self.raw]
+
+        for start, stop in pairs:
+            normalized = [
+                self._to_index_or_pattern(start),
+                self._to_index_or_pattern(stop),
+            ]
+            self._pairs.append(normalized)
+
+        self._is_parsed = True
+
+    def _parse_string_type(self):
+        if self or isinstance(self.raw, list):
+            return
+
+        if not isinstance(self.raw, (str, int)):
+            msg = "unchanged_lines must be in the format: index-k, index-m, ..."
+            raise exceptions.UnchangedLinesError(msg)
+
+        pattern = r"""(?ix)\s*(?P<indices>[+-]?\d+(\s*,\s*[+-]?\d+)*)\s*,?\s*"""
+
+        match = re.fullmatch(pattern, str(self.raw).strip())
+        if not match:
+            msg = "unchanged_lines must be in the format: index-k, index-m, ..."
+            raise exceptions.UnchangedLinesError(msg)
+        self._is_parsed = True
+        self._indices.clear()
+        self._indices = [int(item) for item in match.group("indices").split(",")]
+
+    def _parse(self):
+        self._parse_list_type()
+        self._parse_string_type()
+
+    def apply_unchanged_lines(self, lines):
+        """Mark lines as unchanged based on index rules or start/stop pairs."""
+
+        def matches(index, idx_or_pat, text, total_):
+            """Return True if the current line matches an index or pattern rule."""
+            if isinstance(idx_or_pat, str):
+                return bool(re.search(idx_or_pat, text))
+            if idx_or_pat is None:
+                return index == total_ - 1  # EOF
+            # numeric index (supports negative indexing)
+            idx_ = idx_or_pat if idx_or_pat >= 0 else total_ + idx_or_pat
+            idx_ = idx_ if idx_ >= 0 else 0
+            return idx_ == index
+
+        total = len(lines)
+        if total == 0:
+            return
+
+        # Case 1: explicit index list
+        if self._indices:
+            resolved = [(i if i >= 0 else total + i) for i in self._indices]
+            for idx, line in enumerate(lines):
+                if idx in resolved:
+                    line.unchanged = True
+            return
+
+        # Case 2: start/stop pattern pairs
+        if self._pairs:
+            for start_rule, stop_rule in self._pairs:
+                in_range = False
+                for idx, line in enumerate(lines):
+                    if in_range:
+                        line.unchanged = True
+                        if matches(idx, stop_rule, line.raw, total):
+                            break
+                    if matches(idx, start_rule, line.raw, total):
+                        line.unchanged = True
+                        in_range = True
