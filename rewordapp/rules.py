@@ -262,7 +262,7 @@ class UnchangedLinesRule:
         text = str(value).strip()
 
         # Case 1: signed integer index
-        if re.fullmatch(r"(?i)[+-]\d+", text):
+        if re.fullmatch(r"(?i)[+-]?\d+", text):
             return int(text)
 
         # Case 2: build a tokenized pattern
@@ -275,6 +275,8 @@ class UnchangedLinesRule:
                 tokens.append(re.escape(token))
             elif re.fullmatch(r"\d+", token):
                 tokens.append(r"[0-9]+")
+            elif re.fullmatch(r"\s+", token):
+                tokens.append(r"\s+")
             else:
                 tokens.append(token)
 
@@ -311,7 +313,7 @@ class UnchangedLinesRule:
         # Anything else is invalid
         raise exceptions.UnchangedLinesError(msg)
 
-    def _parse_list_type(self) -> None:
+    def _parse_list_ranges(self) -> None:
         """Parse unchanged_lines list into normalized [start, stop] pairs."""
         if not self.raw:
             return
@@ -325,35 +327,88 @@ class UnchangedLinesRule:
         pairs = self.raw if isinstance(self.raw[0], list) else [self.raw]
 
         for start, stop in pairs:
+            start_val = self._to_index_or_pattern(start)
+
+            # Convert positive indices to zero‑based
+            if isinstance(start_val, int) and start_val > 0:
+                start_val -= 1
+
             normalized = [
-                self._to_index_or_pattern(start),
+                start_val,
                 self._to_index_or_pattern(stop),
             ]
             self._pairs.append(normalized)
 
-        self._is_parsed = True
+        if self._pairs:
+            self._is_parsed = True
 
-    def _parse_string_type(self):
-        if self or isinstance(self.raw, list):
+    def _parse_string_ranges(self) -> None:
+        """Parse unchanged_lines string into a list of zero-based indices."""
+        raw = self.raw
+
+        # Only process primitive string/int forms; lists handled elsewhere
+        if isinstance(raw, list):
             return
 
-        if not isinstance(self.raw, (str, int)):
-            msg = "unchanged_lines must be in the format: index-k, index-m, ..."
+        if not isinstance(raw, (str, int)):
+            msg = (
+                "unchanged_lines must be in the format: "
+                "idx-k, idx-m, idx-k:idx-j, ..."
+            )
             raise exceptions.UnchangedLinesError(msg)
 
-        pattern = r"""(?ix)\s*(?P<indices>[+-]?\d+(\s*,\s*[+-]?\d+)*)\s*,?\s*"""
+        text = str(raw).strip()
 
-        match = re.fullmatch(pattern, str(self.raw).strip())
+        # Capture comma-separated index/range expressions
+        pattern = r"(?ix)\s*(?P<indices>[+-]?\d+(?:[\s0-9,:+-]*))\s*,?\s*"
+        match = re.fullmatch(pattern, text)
         if not match:
-            msg = "unchanged_lines must be in the format: index-k, index-m, ..."
+            msg = (
+                "unchanged_lines must be in the format: "
+                "idx-k, idx-m, idx-k:idx-j, ..."
+            )
             raise exceptions.UnchangedLinesError(msg)
-        self._is_parsed = True
-        self._indices.clear()
-        self._indices = [int(item) for item in match.group("indices").split(",")]
 
-    def _parse(self):
-        self._parse_list_type()
-        self._parse_string_type()
+        self._indices.clear()
+        indices_text = match.group("indices")
+
+        for token in indices_text.split(","):
+            token = token.strip()
+            if not token:
+                continue
+
+            # Case 1: single index
+            if re.fullmatch(r"[+-]?\d+", token):
+                idx = int(token)
+                idx = idx if idx <= 0 else idx - 1  # convert to zero-based
+                if idx not in self._indices:
+                    self._indices.append(idx)
+                continue
+
+            # Case 2: range a:b
+            if token.count(":") == 1:
+                start_str, stop_str = (part.strip() for part in
+                                       token.split(":"))
+                if re.fullmatch(r"[+-]?\d+", start_str) and re.fullmatch(
+                        r"[+-]?\d+", stop_str):
+                    start = int(start_str)
+                    stop = int(stop_str)
+
+                    # convert to zero-based
+                    start = start if start <= 0 else start - 1
+
+                    if start < stop:
+                        for idx in range(start, stop):
+                            if idx not in self._indices:
+                                self._indices.append(idx)
+
+        if self._indices:
+            self._is_parsed = True
+
+    def _parse(self) -> None:
+        """Parse unchanged_lines using list-based or string-based rules."""
+        self._parse_list_ranges()
+        self._parse_string_ranges()
 
     def apply_unchanged_lines(self, lines):
         """Mark lines as unchanged based on index rules or start/stop pairs."""
