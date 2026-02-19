@@ -12,6 +12,7 @@ import re
 import ipaddress
 
 from rewordapp import utils
+from rewordapp.rewrite import checker
 from rewordapp.rewrite.checker import has_known_extension
 from rewordapp.rewrite.mapping import generate_random_binary, Mapping, apply_mapping
 
@@ -40,7 +41,7 @@ def new_word(text: str) -> str:
     match = re.search(ext_pattern, text)
     if match:
         ext = match.group("ext")
-        if has_known_extension(ext):
+        if checker.has_known_extension(ext):
             last = match.group("last")
             first = text[:-len(last)]
 
@@ -67,7 +68,10 @@ def new_url(user="", host="", path="", query="", fragment=""):
             return f"{rewritten}.{tld}"
         subdomain, *other, tld = host.split(".")
         rewritten = apply_mapping(".".join(other), Mapping.url.host)
-        if re.fullmatch(r"(?i)[a-z][a-z0-9]+", subdomain):
+        # if re.fullmatch(r"(?i)[a-z][a-z0-9]+", subdomain):
+        #     return f"{subdomain}.{rewritten}.{tld}"
+
+        if checker.has_common_subdomain(host):
             return f"{subdomain}.{rewritten}.{tld}"
 
         rewritten_subdomain = apply_mapping(subdomain, Mapping.url.host)

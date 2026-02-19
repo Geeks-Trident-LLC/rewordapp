@@ -28,7 +28,7 @@ class RewriteRules(dict):
         "FilePermissionToken": "rewrite_file_permission",
         "IPv4Token": "rewrite_ipv4",
         "IPv6Token": "rewrite_ipv6",
-        "MACAddressToken": "rewrite_mac",
+        "MACToken": "rewrite_mac",
         "URLToken": "rewrite_url",
         "NumberToken": "rewrite_number",
         "WordToken": "rewrite_word",

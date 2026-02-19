@@ -112,9 +112,9 @@ class URLParser:
         if not checker.has_common_tld(host):
             return
 
-        # Validate subdomain (if present)
-        if host.count(".") > 1 and not checker.has_common_subdomain(host):
-            return
+        # # Validate subdomain (if present)
+        # if host.count(".") > 1 and not checker.has_common_subdomain(host):
+        #     return
 
         # Extract prefix/suffix around the matched URL
         self._prefix = self._text[: match.start()] or ""
