@@ -9,6 +9,7 @@ import re
 
 from rewordapp.ui import helper as ui_helper
 from rewordapp.core import RewordBuilder
+from rewordapp import exceptions
 
 from tkinter.font import Font
 
@@ -99,19 +100,36 @@ def show(app):
         dialog.destroy()
 
     def on_save():
-        # rules_text = ui_helper.extract_text(textarea)
-        app.rules_text = ui_helper.extract_text(textarea)
+        """Validate rewrite rules, apply them, and update the output text."""
+        rules_text = ui_helper.extract_text(textarea)
+        user_text = ui_helper.extract_text(app.user_textarea).strip()
 
-        user_input = ui_helper.extract_text(app.user_textarea)
-        if len(re.sub(r"\s+", "", user_input)) > 0:
-            builder = RewordBuilder(user_input, rules_text=app.rules_text)
+        if not re.sub(r"\s+", "", user_text):
+            return  # Nothing to process
+
+        try:
+            builder = RewordBuilder(user_text, rules_text=rules_text)
+
             app.output_textarea.config(state=ui.tk.NORMAL)
             app.output_textarea.delete("1.0", "end")
             app.output_textarea.insert("1.0", builder.rewritten)
             app.output_textarea.config(state=ui.tk.DISABLED)
-            app.rules_text = builder.rules.text
+
+            app.rules_text = builder.rules.text_with_rule_docs
             app.rewrite_sync = ui_helper.RewriteSync(app=app)
-        dialog.destroy()
+
+            dialog.destroy()
+
+        except Exception as ex:
+            title = (
+                "Invalid Rewrite Rule"
+                if isinstance(ex, exceptions.RewriteRuleError)
+                else "Unexpected Error"
+            )
+            message = f"{type(ex).__name__} - {ex}"
+
+            ui_helper.show_message_dialog(title=title, error=message)
+            dialog.lift()
 
     ui.create_widget(
         "button", parent=footer, text="Cancel", width=button_width,

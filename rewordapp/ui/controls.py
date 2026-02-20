@@ -219,7 +219,7 @@ def perform_reword(app) -> None:
         app.output_textarea.delete("1.0", "end")
         app.output_textarea.insert("1.0", builder.rewritten)
         app.output_textarea.config(state=ui.tk.DISABLED)
-        app.rules_text = builder.rules.text
+        app.rules_text = builder.rules.text_with_rule_docs
         app.rewrite_sync = ui_helper.RewriteSync(app=app)
 
     else:

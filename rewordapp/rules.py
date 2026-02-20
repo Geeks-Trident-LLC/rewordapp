@@ -60,6 +60,17 @@ class RewriteRules(dict):
             sort_keys=False,
         ).rstrip("\r\n")
 
+    @property
+    def text_with_rule_docs(self) -> str:
+        """Return the text prefixed with a banner and links to rewrite‑rule documentation."""
+        header = "# See the full list of rewrite rules in the wiki:"
+        link = "# https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rule-Editor"
+
+        border = "#" * max(len(header), len(link))
+        docs_block = f"{border}\n{header}\n{link}\n{border}"
+
+        return f"{docs_block}\n{self.text}"
+
     def to_string(self) -> str:
         """Return the rules as a YAML-formatted string."""
         return self.text
@@ -131,7 +142,10 @@ class DateTimeTokenRule:
             return
 
         if len(self.raw) not in (2, 3):
-            msg = "rewrite_datetime must be [true|false|yes|no, index, width]"
+            msg = (
+                "rewrite_datetime must be [true|false|yes|no, index, width]"
+                f"\nReceived: {self.raw!r}"
+            )
             raise exceptions.DateTimeRuleError(msg)
 
         # Normalize values
@@ -145,17 +159,26 @@ class DateTimeTokenRule:
 
         # Validate flag
         if not re.fullmatch(r"(?i)(true|false|yes|no)", flag):
-            msg = "first element must be one of: true, false, yes, no"
+            msg = (
+                "first element must be one of: true, false, yes, no"
+                f"\nReceived: {self.raw!r}"
+            )
             raise exceptions.DateTimeRuleError(msg)
 
         # Validate index
         if not re.fullmatch(r"(?i)[+-]?\d+", index_str):
-            msg = "second element must be a signed integer index"
+            msg = (
+                "second element must be a signed integer index"
+                f"\nReceived: {self.raw!r}"
+            )
             raise exceptions.DateTimeRuleError(msg)
 
         # Validate width
         if not re.fullmatch(r"(?i)(\d+|eol|none)", width_str):
-            msg = "third element must be a width value or 'eol' or 'none'"
+            msg = (
+                "third element must be a width value or 'eol' or 'none'"
+                f"\nReceived: {self.raw!r}"
+            )
             raise exceptions.DateTimeRuleError(msg)
 
         # Apply parsed values
@@ -171,7 +194,8 @@ class DateTimeTokenRule:
 
         if not isinstance(self._rule_value, str):
             msg = ("rewrite_datetime must be 'flag, index, width' "
-                   "where flag is one of: yes, no, true, false")
+                   "where flag is one of: yes, no, true, false"
+                   f"\nReceived: {self.raw!r}")
             raise exceptions.DateTimeRuleError(msg)
 
         pattern = r"""(?ix)
@@ -183,7 +207,8 @@ class DateTimeTokenRule:
         match = re.fullmatch(pattern, self._rule_value.strip())
         if not match:
             msg = ("rewrite_datetime must be 'flag, index, width' "
-                   "where flag is one of: yes, no, true, false")
+                   "where flag is one of: yes, no, true, false"
+                   f"\nReceived: {self.raw!r}")
             raise exceptions.DateTimeRuleError(msg)
 
         flag = match.group("flag").lower()
@@ -288,6 +313,7 @@ class UnchangedLinesRule:
         msg = (
             "unchanged_lines must be in the format [[start, stop], ...] where "
             "start is an integer or string, and stop is an integer, string, or null"
+            f"\nReceived: {self.raw!r}"
         )
 
         raw = self.raw
@@ -354,6 +380,7 @@ class UnchangedLinesRule:
             msg = (
                 "unchanged_lines must be in the format: "
                 "idx-k, idx-m, idx-k:idx-j, ..."
+                f"\nReceived: {self.raw!r}"
             )
             raise exceptions.UnchangedLinesError(msg)
 
@@ -366,6 +393,7 @@ class UnchangedLinesRule:
             msg = (
                 "unchanged_lines must be in the format: "
                 "idx-k, idx-m, idx-k:idx-j, ..."
+                f"\nReceived: {self.raw!r}"
             )
             raise exceptions.UnchangedLinesError(msg)
 
