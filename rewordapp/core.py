@@ -15,12 +15,38 @@ from rewordapp.rules import RewriteRules
 class RewordBuilder:
     """Builds rewritten text by transforming each line according to a rule."""
 
-    def __init__(self, text: str, rules_text: str = "") -> None:
-        self._text = str(text)
-        self.rules = RewriteRules(rules_text=rules_text)
+    def __init__(
+            self,
+            text: str = "",
+            data_file: str = "",
+            rule_text: str = "",
+            rule_file: str = "",
+    ) -> None:
+        """Initialize the text source and load rewrite rules."""
+
+        if data_file:
+            with open(data_file, "r", encoding="utf-8") as fh:
+                self._text = fh.read()
+        else:
+            self._text = str(text)
+
+        self.rules = RewriteRules(
+            rule_text=rule_text,
+            rule_file=rule_file,
+        )
 
         # Store as list so lines can be iterated multiple times
-        self._lines = [Line(line, rules=self.rules) for line in self._text.splitlines(keepends=True)]
+        self._lines = [
+            Line(line, rules=self.rules)
+            for line in self._text.splitlines(keepends=True)
+        ]
+
+    def __bool__(self) -> bool:
+        """Return True if the object is valid."""
+        return True if self.raw.strip() else False
+
+    def __len__(self) -> int:
+        return 1 if self.raw.strip() else 0
 
     @property
     def raw(self) -> str:

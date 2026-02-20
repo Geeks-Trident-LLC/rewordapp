@@ -1,162 +1,219 @@
 """
 rewordapp.main
 =============
-Entry-point logic for the rewordapp project.
+Main entry point for RewordApp's command‑line interface.
 
-This module defines the console interface and supporting functions
-for running RewordApp. It configures command-line options, handles
-version and dependency reporting, and provides the ability to launch
-the graphical interface.
 """
 
 import argparse
 
+from rewordapp.deps import genericlib_file_module as file
 from rewordapp.deps import genericlib_sys_exit as sys_exit
 from rewordapp.deps import genericlib_decorate_list_of_line as decorate_list_of_line
+
+from rewordapp.core import RewordBuilder
 
 from rewordapp.application import Application
 
 
 def run_gui_application(options):
-    """Run the RewordApp GUI if `options.gui` is True.
+    """Launch the RewordApp GUI when the --gui flag is enabled."""
+    if not options.gui:
+        return
 
-    Parameters
-    ----------
-    options : argparse.Namespace
-        Parsed CLI arguments containing the `gui` flag.
-    """
-    if options.gui:
-        app = Application()
-        app.run()
-        sys_exit(success=True)
+    app = Application()
+    app.run()
+    sys_exit(success=True)
 
 
-def show_dependency(options):
-    """Display RewordApp dependency information if `options.dependency` is True.
+def show_dependencies(options):
+    """Display RewordApp dependency information when the --dependency flag is enabled."""
+    if not options.dependency:
+        return
 
-    Parameters
-    ----------
-    options : argparse.Namespace
-        Parsed CLI arguments containing the `dependency` flag.
-    """
-    if options.dependency:
-        from platform import uname
-        from platform import python_version
-        import rewordapp.config as config
+    from platform import uname, python_version
+    import rewordapp.config as config
 
-        os_name = uname().system
-        os_release = uname().release
-        py_ver = python_version()
-        lst = [
-            config.main_app_text,
-            f'Platform: {os_name} {os_release} - Python {py_ver}',
-            '--------------------',
-            'Dependencies:'
-        ]
+    system = uname()
+    python_ver = python_version()
 
-        for pkg in config.get_dependency().values():
-            lst.append(f'  + Package: {pkg["package"]}')
-            lst.append(f'             {pkg["url"]}')
+    lines = [
+        config.main_app_text,
+        f"Platform: {system.system} {system.release} - Python {python_ver}",
+        "--------------------",
+        "Dependencies:",
+    ]
 
-        msg = decorate_list_of_line(lst)
-        sys_exit(success=True, msg=msg)
+    for pkg in config.get_dependency().values():
+        lines.append(f"  + Package: {pkg['package']}")
+        lines.append(f"             {pkg['url']}")
+
+    message = decorate_list_of_line(lines)
+    sys_exit(success=True, msg=message)
 
 def show_version(options):
-    """Display the current RewordApp version if `options.version` is True.
+    """Print the installed RewordApp version and exit if requested."""
+    if not options.version:
+        return
 
-    Parameters
-    ----------
-    options : argparse.Namespace
-        Parsed CLI arguments containing the `version` flag.
-    """
-    if options.version:
-        from rewordapp import version
-        sys_exit(success=True, msg=f"rewordapp {version}")
+    from rewordapp import version
+    sys_exit(success=True, msg=f"rewordapp {version}")
+
+
+def run_rewrite(options):
+    """Rewrite input text using the provided rules and output settings."""
+
+    if not options.data_file:
+        return
+    try:
+        builder = RewordBuilder(
+            data_file=options.data_file,
+            rule_file=options.rule_file
+        )
+        if builder:
+            rewrite_content = builder.rewritten
+
+            if options.show_rules:
+                print(decorate_list_of_line([f"{'Rewrite Rules':<20}"]))
+                print(f"{builder.rules.text_with_rule_docs}\n")
+
+            if options.show_data:
+                print(decorate_list_of_line([f"{'Raw Data':<20}"]))
+                print(f"{builder.raw}\n")
+
+            # Write output to file or print to console
+            if options.output_file or options.save_rule_file:
+                print(decorate_list_of_line([f"{'Save File(s)':<20}"]))
+                if options.save_rule_file:
+                    file.write(options.save_rule_file, builder.rules.text_with_rule_docs)
+                    print(f"+++ Rewrite rule has been saved "
+                          f"to {options.save_rule_file!r}.")
+
+                if options.output_file:
+                    file.write(options.output_file, builder.rewritten)
+                    print(f"+++ Rewritten content has been saved "
+                          f"to {options.output_file!r}.")
+
+                print()
+
+            if not options.output_file:
+                print(decorate_list_of_line([f"{'Rewrite Content':<20}"]))
+                print(f"{rewrite_content}\n")
+
+            sys_exit(success=True)
+
+        sys_exit(success=False, msg=f">>> data_file does not have any content.")
+
+    except Exception as ex:
+        sys_exit(success=False, msg=f">>> {type(ex).__name__}: {ex}")
 
 
 class Cli:
-    """Command-line interface handler for RewordApp.
-
-    Parses arguments, validates flags, and dispatches actions such as
-    showing version, listing dependencies, or launching the GUI.
-    """
+    """Command-line interface handler for RewordApp."""
 
     def __init__(self):
-
+        """Initialize the CLI parser and load command‑line options."""
         parser = argparse.ArgumentParser(
-            prog='rewordapp',
-            usage='%(prog)s [options]',
+            prog="rewordapp",
+            usage="%(prog)s [options]",
             description=(
-                "RewordApp is a versatile text transformation utility. "
-                "It provides both command-line and GUI interfaces for "
-                "rewriting, obfuscating, or rephrasing text to support "
-                "secure collaboration, testing, and automation workflows."
+                "RewordApp is a versatile text‑transformation utility providing both "
+                "command‑line and GUI interfaces for rewriting, obfuscating, or "
+                "rephrasing text to support secure collaboration, testing, and "
+                "automation workflows."
             ),
         )
 
         parser.add_argument(
-            '--gui', action='store_true',
+            "--gui",
+            action="store_true",
             help=(
-                "Launch the graphical interface for interactive text "
-                "rewriting and configuration. Ideal for users who prefer "
-                "a visual workflow over command-line options."
+                "Launch the graphical interface for interactive text rewriting and "
+                "configuration. Ideal for users who prefer a visual workflow."
+            ),
+        )
+
+        parser.add_argument(
+            "-f", "--data-file",
+            type=str,
+            default="",
+            help="Path to the input data file used for rewrite processing.",
+        )
+
+        parser.add_argument(
+            "-r", "--rule-file",
+            type=str,
+            default="",
+            help=(
+                "Path to the rewrite rule file (dictionary‑style YAML) "
+                "that defines the rewriting behavior."
             )
         )
 
         parser.add_argument(
-            '-d', '--dependency', action='store_true',
-            help="Display the list of packages required by RewordApp"
+            "--show-data",
+            action="store_true",
+            help="Display the content of the date file."
         )
 
         parser.add_argument(
-            '-v', '--version', action='store_true',
-            help="Display the installed RewordApp version and exit"
+            "--show-rules",
+            action="store_true",
+            help="Display the rewrite rules in the console after rewriting."
+        )
+
+        parser.add_argument(
+            "-o", "--output-file",
+            type=str,
+            default="",
+            help="Path to the file where rewritten content will be saved.",
+        )
+
+        parser.add_argument(
+            "--save-rule-file",
+            type=str,
+            default="",
+            help="Path to the file where rewrite rules will be saved.",
+        )
+
+        parser.add_argument(
+            "--dependency",
+            action="store_true",
+            help="Display the list of packages required by RewordApp.",
+        )
+
+        parser.add_argument(
+            "-v", "--version",
+            action="store_true",
+            help="Display the installed RewordApp version and exit.",
         )
 
         self.parser = parser
-        self.options = self.parser.parse_args()
-        self.kwargs = dict()
+        self.options = parser.parse_args()
+        self.kwargs = {}
 
     def validate_cli_flags(self, options):
-        """Validate parsed CLI flags.
+        """Ensure at least one CLI flag is provided; otherwise show help and exit."""
+        has_flag = any(bool(value) for value in vars(options).values())
 
-        Parameters
-        ----------
-        options : argparse.Namespace
-            Parsed command-line arguments to check for active flags.
-
-        Returns
-        -------
-        bool
-            True if at least one flag is set; otherwise prints help and exits.
-        """
-
-        chk = any(bool(i) for i in vars(options).values())
-
-        if not chk:
+        if not has_flag:
             self.parser.print_help()
             sys_exit(success=True)
 
         return True
 
     def run(self):
-        """Process CLI arguments and execute actions.
-
-        Parses command-line options, validates flags, and dispatches
-        tasks such as showing version, listing dependencies, or
-        launching the GUI.
-        """
+        """Process CLI arguments, validate flags, and dispatch CLI actions."""
         options = self.parser.parse_args()
-        show_version(self.options)
-        show_dependency(self.options)
+
+        show_version(options)
+        show_dependencies(options)
         self.validate_cli_flags(options)
         run_gui_application(options)
+        run_rewrite(options)
 
 
 def execute():
-    """Initialize and run the RewordApp CLI entry point.
-
-    Creates a Cli instance, parses arguments, and dispatches actions.
-    """
-    app = Cli()
-    app.run()
+    """Start the RewordApp CLI by creating and running the main controller."""
+    cli = Cli()
+    cli.run()

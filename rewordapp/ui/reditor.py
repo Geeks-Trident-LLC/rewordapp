@@ -81,8 +81,8 @@ def show(app):
     textarea = tk.Text(text_frame, wrap="none", font=Font(family="Courier", size=10))
     textarea.grid(row=0, column=0, sticky="nsew")
 
-    if app.rules_text.strip():
-        textarea.insert("1.0", app.rules_text)
+    if app.rule_text.strip():
+        textarea.insert("1.0", app.rule_text)
 
     vscroll = tk.Scrollbar(text_frame, orient="vertical", command=textarea.yview)
     vscroll.grid(row=0, column=1, sticky="ns")
@@ -101,21 +101,21 @@ def show(app):
 
     def on_save():
         """Validate rewrite rules, apply them, and update the output text."""
-        rules_text = ui_helper.extract_text(textarea)
+        rule_text = ui_helper.extract_text(textarea)
         user_text = ui_helper.extract_text(app.user_textarea).strip()
 
         if not re.sub(r"\s+", "", user_text):
             return  # Nothing to process
 
         try:
-            builder = RewordBuilder(user_text, rules_text=rules_text)
+            builder = RewordBuilder(text=user_text, rule_text=rule_text)
 
             app.output_textarea.config(state=ui.tk.NORMAL)
             app.output_textarea.delete("1.0", "end")
             app.output_textarea.insert("1.0", builder.rewritten)
             app.output_textarea.config(state=ui.tk.DISABLED)
 
-            app.rules_text = builder.rules.text_with_rule_docs
+            app.rule_text = builder.rules.text_with_rule_docs
             app.rewrite_sync = ui_helper.RewriteSync(app=app)
 
             dialog.destroy()

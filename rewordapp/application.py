@@ -44,7 +44,7 @@ class Application:
         self.output_frame = None        # frame containing the output textarea
         self.output_textarea = None
 
-        self.rules_text = ""
+        self.rule_text = ""
 
         self.rewrite_sync = ui_helper.RewriteSync()
 

@@ -36,7 +36,7 @@ class TestRewordBuilder:
     )
     def test_rewritten_text(self, txt):
         text = dedent_and_strip(txt)
-        builder = RewordBuilder(text)
+        builder = RewordBuilder(text=text)
         rewritten = builder.rewritten
         assert rewritten != text
         assert len(rewritten) == len(text)

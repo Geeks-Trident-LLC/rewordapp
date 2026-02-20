@@ -128,7 +128,7 @@ def import_file_to_input(app) -> None:
         app.output_textarea.delete("1.0", "end")
         app.output_textarea.config(state=ui.tk.DISABLED)
 
-        app.rules_text = ""
+        app.rule_text = ""
         app.rewrite_sync = ui_helper.RewriteSync()
 
     except Exception as ex:
@@ -185,7 +185,7 @@ def paste_from_clipboard(app) -> None:
         app.output_textarea.delete("1.0", "end")
         app.output_textarea.config(state=ui.tk.DISABLED)
 
-        app.rules_text = ""
+        app.rule_text = ""
         app.rewrite_sync = ui_helper.RewriteSync()
 
     except Exception as ex:
@@ -204,7 +204,7 @@ def reset_textarea(app) -> None:
     app.output_textarea.delete("1.0", "end")
     app.output_textarea.config(state=ui.tk.DISABLED)
 
-    app.rules_text = ""
+    app.rule_text = ""
     app.rewrite_sync = ui_helper.RewriteSync()
 
 
@@ -214,12 +214,12 @@ def perform_reword(app) -> None:
 
     # Check for any non‑whitespace content
     if len(re.sub(r"\s+", "", text)) > 0:
-        builder = RewordBuilder(text, rules_text=app.rules_text)
+        builder = RewordBuilder(text=text, rule_text=app.rule_text)
         app.output_textarea.config(state=ui.tk.NORMAL)
         app.output_textarea.delete("1.0", "end")
         app.output_textarea.insert("1.0", builder.rewritten)
         app.output_textarea.config(state=ui.tk.DISABLED)
-        app.rules_text = builder.rules.text_with_rule_docs
+        app.rule_text = builder.rules.text_with_rule_docs
         app.rewrite_sync = ui_helper.RewriteSync(app=app)
 
     else:

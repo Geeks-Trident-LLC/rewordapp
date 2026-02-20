@@ -9,16 +9,23 @@ from rewordapp.rewrite import mapping
 import rewordapp.exceptions as exceptions
 
 
-def load_rules(rules_str: str) -> dict:
-    """Load YAML rules and ensure the result is a dictionary."""
-    result = yaml.safe_load(rules_str)
+def load_rules(rule_text: str = "", rule_file: str = "") -> dict:
+    """Load rewrite rules from YAML text or a YAML file and return a dictionary."""
+    data = {}
 
-    if not isinstance(result, dict):
+    if rule_text:
+        data = yaml.safe_load(rule_text)
+
+    if rule_file:
+        with open(rule_file, "r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh)
+
+    if not isinstance(data, dict):
         raise exceptions.InvalidRulesFormat(
-            f"Rules must be a dictionary, but received {type(result).__name__}."
+            f"Rules must be a dictionary, but received {type(data).__name__}."
         )
 
-    return result
+    return data
 
 
 class RewriteRules(dict):
@@ -36,10 +43,10 @@ class RewriteRules(dict):
 
     # rule_to_token = dict(zip(token_to_rule.values(), token_to_rule.keys()))
 
-    def __init__(self, rules_text: str=""):
+    def __init__(self, rule_text: str="", rule_file: str=""):
         # Load provided YAML or fall back to default rule
-        if rules_text:
-            parsed = load_rules(rules_text)
+        if rule_text or rule_file:
+            parsed = load_rules(rule_text=rule_text, rule_file=rule_file)
             super().__init__(**parsed)
         else:
             super().__init__(rewrite_on_each_generate=True)
@@ -126,7 +133,7 @@ class DateTimeTokenRule:
         return self._is_parsed
 
     def __len__(self):
-        return bool(self._is_parsed)
+        return 1 if self._is_parsed else 0
 
     @property
     def raw(self):
