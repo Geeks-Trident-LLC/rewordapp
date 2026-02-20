@@ -10,6 +10,7 @@ import re
 
 import rewordapp.rewrite.rewritten as rewritten
 from rewordapp.deps import genericlib_DotObject as DotObject
+from rewordapp import PATTERN
 
 import rewordapp.rewrite.checker as checker
 
@@ -73,6 +74,8 @@ class URLParser:
 
     def _apply_parsed_fields(self, parsed: dict) -> None:
         """Populate network_info and prefix/suffix from regex results."""
+        self._prefix = parsed.get("prefix") or ""
+        self._suffix = parsed.get("suffix") or ""
         self.info.scheme = parsed.get("scheme") or ""
         self.info.user = parsed.get("user") or ""
         self.info.host = parsed.get("host") or ""
@@ -90,7 +93,9 @@ class URLParser:
 
     def _parse(self) -> None:
         """Parse MAC address from raw text."""
-        pattern = r"""(?ix)
+
+        pattern = rf"""(?ix)
+            (?P<prefix>{PATTERN.punct}*)
             (?P<url>
                 (?P<scheme>[a-zA-Z][a-zA-Z0-9+.-]*://)?         # scheme
                 (?:(?P<user>[^:@]+(?::[^@]+)?@))?               # user
@@ -100,6 +105,7 @@ class URLParser:
                 (?:(?P<query>\?[a-z0-9_.=&]+))?                 # query
                 (?:(?P<fragment>\#[a-z0-9_.%]+))?               # fragment
             )
+            (?P<suffix>{PATTERN.punct}*)
         """
 
         match = re.fullmatch(pattern, self._text)
@@ -117,8 +123,8 @@ class URLParser:
         #     return
 
         # Extract prefix/suffix around the matched URL
-        self._prefix = self._text[: match.start()] or ""
-        self._suffix = self._text[match.end():] or ""
+        # self._prefix = self._text[: match.start()] or ""
+        # self._suffix = self._text[match.end():] or ""
 
         # Apply parsed fields to internal state
         self._apply_parsed_fields(match.groupdict())
