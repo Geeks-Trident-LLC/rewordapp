@@ -77,6 +77,7 @@ rewordapp [options]
 | `-r, --rule-file` | YAML rule file defining rewrite behavior |
 | `--show-data` | Display raw input data |
 | `--show-rules` | Display rewrite rules |
+ | `--show-header` | Display a header above the output |
 | `-o, --output-file` | Save rewritten content to a file |
 | `--save-rule-file` | Save the active rewrite rules |
 | `--dependency` | Show dependency information |
@@ -90,6 +91,7 @@ rewordapp \
     --rule-file rules.yaml \
     --show-data \
     --show-rules \
+    --show-header \
     --output-file rewritten.txt
 ```
 
