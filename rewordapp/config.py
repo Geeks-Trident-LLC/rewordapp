@@ -12,7 +12,7 @@ from rewordapp.deps import genericlib_version
 from rewordapp.deps import genericlib_dedent_and_strip as dedent_and_strip
 from rewordapp.deps import regexapp_version
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 version = __version__
 
 __all__ = [
