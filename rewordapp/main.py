@@ -74,11 +74,13 @@ def run_rewrite(options):
             rewrite_content = builder.rewritten
 
             if options.show_rules:
-                print(decorate_list_of_line([f"{'Rewrite Rules':<20}"]))
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Rewrite Rules':<20}"]))
                 print(f"{builder.rules.text_with_rule_docs}\n")
 
             if options.show_data:
-                print(decorate_list_of_line([f"{'Raw Data':<20}"]))
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Raw Data':<20}"]))
                 print(f"{builder.raw}\n")
 
             # Write output to file or print to console
@@ -97,8 +99,9 @@ def run_rewrite(options):
                 print()
 
             if not options.output_file:
-                print(decorate_list_of_line([f"{'Rewrite Content':<20}"]))
-                print(f"{rewrite_content}\n")
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Rewrite Content':<20}"]))
+                print(f"{rewrite_content}")
 
             sys_exit(success=True)
 
@@ -160,6 +163,12 @@ class Cli:
             "--show-rules",
             action="store_true",
             help="Display the rewrite rules in the console after rewriting."
+        )
+
+        parser.add_argument(
+            "--show-header",
+            action="store_true",
+            help="Display a header above the output."
         )
 
         parser.add_argument(
