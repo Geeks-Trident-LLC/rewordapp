@@ -10,12 +10,11 @@ setup(
     version="0.3.1",  # pre-alpha versioning to signal alpha/beta status
     license="BSD-3-Clause",
     license_files=["LICENSE"],
-    description="A versatile Python utility that transforms text into readable "
-                "yet obfuscated form, designed for remote work and contract "
-                "development scenarios. It helps safeguard data integrity and "
-                "confidentiality by ensuring sensitive information remains "
-                "protected while still maintaining usability for testing, "
-                "automation, and collaborative workflows across diverse environments.",
+    description=(
+        "A Python utility that converts text into readable, obfuscated form "
+        "to protect sensitive data while supporting testing, automation, "
+        "and collaborative workflows."
+    ),
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Tuyen Mathew Duong",
