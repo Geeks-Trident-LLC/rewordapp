@@ -181,7 +181,7 @@ class DateTimeTokenRule:
             raise exceptions.DateTimeRuleError(msg)
 
         # Validate width
-        if not re.fullmatch(r"(?i)(\d+|eol|none)", width_str):
+        if not re.fullmatch(r"(?i)(\d+|eol|none|null)", width_str):
             msg = (
                 "third element must be a width value or 'eol' or 'none'"
                 f"\nReceived: {self.raw!r}"

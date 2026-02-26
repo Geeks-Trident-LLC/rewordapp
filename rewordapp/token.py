@@ -7,6 +7,7 @@ from rewordapp.parser.number import NumberParser
 from rewordapp.parser.word import WordParser
 from rewordapp.parser.fperm import FilePermissionParser
 from rewordapp.parser.datetime import DateTimeParser
+from rewordapp.parser.datetime import DateParser
 
 from rewordapp.rules import RewriteRules
 
@@ -206,6 +207,8 @@ class DateTimeToken(BaseToken):
     """Token representing a datetime."""
     def _detect(self) -> None:
         self._update_parsed_node(DateTimeParser)
+        if not self:
+            self._update_parsed_node(DateParser)
 
 
 def build_token(text: str, rules: dict | None = None):

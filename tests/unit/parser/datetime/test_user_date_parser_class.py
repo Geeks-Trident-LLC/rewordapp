@@ -30,6 +30,10 @@ from rewordapp.parser.datetime import UserDateParser
         "15 February 2026",
         "15 Feb 2026",
 
+        # month day year
+        "February 15  2026",
+        "Feb  5  2026",
+
         # %m-%d-%y or %m/%d/%y
         "02-15-26",
         "02/15/26",

@@ -73,19 +73,10 @@ def run_rewrite(options):
         if builder:
             rewrite_content = builder.rewritten
 
-            if options.show_rules:
-                if options.show_header:
-                    print(decorate_list_of_line([f"{'Rewrite Rules':<20}"]))
-                print(f"{builder.rules.text_with_rule_docs}\n")
-
-            if options.show_data:
-                if options.show_header:
-                    print(decorate_list_of_line([f"{'Raw Data':<20}"]))
-                print(f"{builder.raw}\n")
-
             # Write output to file or print to console
             if options.output_file or options.save_rule_file:
-                print(decorate_list_of_line([f"{'Save File(s)':<20}"]))
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Save File(s)':<20}"]))
                 if options.save_rule_file:
                     file.write(options.save_rule_file, builder.rules.text_with_rule_docs)
                     print(f"+++ Rewrite rule has been saved "
@@ -96,7 +87,17 @@ def run_rewrite(options):
                     print(f"+++ Rewritten content has been saved "
                           f"to {options.output_file!r}.")
 
-                print()
+                sys_exit(success=True)
+
+            if options.show_rules:
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Rewrite Rules':<20}"]))
+                print(f"{builder.rules.text_with_rule_docs}\n")
+
+            if options.show_data:
+                if options.show_header:
+                    print(decorate_list_of_line([f"{'Raw Data':<20}"]))
+                print(f"{builder.raw}\n")
 
             if not options.output_file:
                 if options.show_header:

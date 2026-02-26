@@ -188,9 +188,9 @@ class BaseDTParser:
         return step2
 
     def _match_prefixed_number_widths(self, formatted_text: str) -> str:
-        """Match widths of letter‑prefixed numeric segments to those in the raw text."""
+        """Match widths of letter‑prefixed numeric segments against the raw text."""
         raw = self._raw_text
-        pattern = r"[bcdeghilnprtuvy]\s+\d+"
+        pattern = r"[bcdeghilnprtuvy]\s+\d+(?:\s+\d{4})?"
 
         raw_parts = utils.split_by_matches(raw, pattern)
         fmt_parts = utils.split_by_matches(formatted_text, pattern)
@@ -202,12 +202,20 @@ class BaseDTParser:
             fmt_seg = fmt_parts[idx]
 
             if re.match(pattern, raw_seg) and re.match(pattern, fmt_seg):
-                left_r, mid_r, right_r = utils.split_by_matches(raw_seg)
-                left_f, mid_f, right_f = utils.split_by_matches(fmt_seg)
-                if len(mid_r) == len(mid_f):
-                    fmt_parts[idx] = f"{left_f}{mid_f}{int(right_f)}"
-                elif len(mid_r) > len(mid_f):
-                    fmt_parts[idx] = f"{left_f}{mid_r}{int(right_f)}"
+                raw_items = utils.split_by_matches(raw_seg)
+                fmt_items = utils.split_by_matches(fmt_seg)
+
+                for i, raw_item in enumerate(raw_items):
+                    fmt_item = fmt_items[i]
+
+                    if raw_item.isdigit() and fmt_item.isdigit():
+                        width = len(raw_item)
+                        fmt_items[i] = f"{int(fmt_item):>{width}}"
+                    else:
+                        fmt_items[
+                            i] = fmt_item if fmt_item.strip() else raw_item
+
+                fmt_parts[idx] = "".join(fmt_items)
 
         return "".join(fmt_parts)
 
@@ -274,14 +282,20 @@ class BaseDTParser:
             return candidate
 
         # Ensure month/day alignment before searching backward
-        candidate = candidate.replace(month=base.month, day=base.day) - timedelta(days=randint(1, 20))
+        candidate = candidate.replace(
+            month=base.month,
+            day=base.day,
+            hour=random_hour(base.hour),
+            minute=random_minute_or_second(base.minute),
+            second=random_minute_or_second(base.second)
+        ) - timedelta(days=randint(1, 20))
 
         # Walk backward until month/day digit-width matches the base
         for _ in range(360):
             candidate -= timedelta(days=1)
             if (
-                    len(str(candidate.month)) == len(str(base.month))
-                    and len(str(candidate.day)) == len(str(base.day))
+                len(str(candidate.month)) == len(str(base.month))
+                and len(str(candidate.day)) == len(str(base.day))
             ):
                 return candidate
 
@@ -1136,6 +1150,14 @@ class UserDateParser(BaseDTParser):
             self.parse_with_any(
                 "%d %B %Y",
                 "%d %b %Y",
+            )
+            return
+
+        # Month day Year
+        if re.match(r"(?i)[a-z]+\s+\d{1,2}\s+\d{4}", text):
+            self.parse_with_any(
+                "%B %d %Y",
+                "%b %d %Y",
             )
             return
 
