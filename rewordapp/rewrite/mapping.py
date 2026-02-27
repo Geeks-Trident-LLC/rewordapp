@@ -9,7 +9,7 @@ import random
 import re
 from string import digits, ascii_lowercase, ascii_uppercase
 
-from rewordapp.deps import genericlib_DotObject as DotObject
+from rewordapp.libs.generic import DotObject
 
 
 def refresh() -> None:

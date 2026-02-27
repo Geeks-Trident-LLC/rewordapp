@@ -10,7 +10,7 @@ import re
 import ipaddress
 
 import rewordapp.rewrite.rewritten as rewritten
-from rewordapp.deps import genericlib_DotObject as DotObject
+from rewordapp.libs.generic import DotObject
 
 
 def is_valid_network(network: str) -> bool:

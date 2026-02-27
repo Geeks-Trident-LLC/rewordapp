@@ -9,7 +9,7 @@ mapped or obfuscated URL variants.
 import re
 
 import rewordapp.rewrite.rewritten as rewritten
-from rewordapp.deps import genericlib_DotObject as DotObject
+from rewordapp.libs.generic import DotObject
 from rewordapp import PATTERN
 
 import rewordapp.rewrite.checker as checker
