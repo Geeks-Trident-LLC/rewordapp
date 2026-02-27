@@ -2,7 +2,6 @@
 
 import yaml
 import re
-import string
 
 import textwrap
 
@@ -303,30 +302,43 @@ class UnchangedLinesRule:
         if re.fullmatch(r"(?i)[+-]?\d+", text):
             return int(text)
 
-        # Case 2: build a tokenized pattern
-        tokens = []
-        punct = f"[{re.escape(string.punctuation)}]+"
-        token_pattern = rf"(?i)\s+|[a-z]+|{punct}|[0-9]+"
+        if text.lower() in ("none", "null", "eof"):
+            return text if text.lower() == "eof" else 0
 
-        for token in utils.split_by_matches(text, pattern=token_pattern):
-            if re.fullmatch(punct, token):
-                tokens.append(re.escape(token))
-            elif re.fullmatch(r"\d+", token):
-                tokens.append(r"[0-9]+")
-            elif re.fullmatch(r"\s+", token):
-                tokens.append(r"\s+")
-            else:
-                tokens.append(token)
+        if re.fullmatch(r"(?i)w\d+", text):
+            return text.lower()
 
-        return "".join(tokens)
+        return utils.text_to_pattern(text)
 
     def _validate_ranges(self) -> None:
         """Validate unchanged_lines as [[start, stop], ...] pairs."""
-        msg = (
-            "unchanged_lines must be in the format [[start, stop], ...] where "
-            "start is an integer or string, and stop is an integer, string, or null"
-            f"\nReceived: {self.raw!r}"
-        )
+        msg = textwrap.dedent(
+            f"""
+            Invalid value for `unchanged_lines`.
+
+            Expected one of the following pair formats:
+            ======================================
+            unchanged_lines: [<idx-i>, <idx-k>]
+            unchanged_lines: [<idx-i>, <width>]
+            unchanged_lines: [<start>, <stop>]
+            unchanged_lines: [<start>, <idx-k>]
+            unchanged_lines: [<start>, <width>]
+            unchanged_lines: [<idx-i>, <stop>]
+            ======================================
+            
+            Multiple pairs may be combined:
+            ======================================
+            unchanged_lines: [
+              [<idx-i>, <idx-k>],
+              [<idx-i>, <width>],
+              ...,
+              [<start>, <stop>]
+            ]
+            ======================================
+            
+            Received: {self.raw!r}
+            """
+        ).strip()
 
         raw = self.raw
 
@@ -442,16 +454,22 @@ class UnchangedLinesRule:
                     self._slice_indices.append(slice(start, None))
                 elif b.startswith("w"):
                     width = int(b[1:])
+                    if width == 0:
+                        continue
                     stop = start + width
                     if start < 0 <= stop:
                         self._slice_indices.append(slice(start, None))
                     else:
-                        self._slice_indices.append(slice(start, stop))
+                        if stop > start:
+                            self._slice_indices.append(slice(start, stop))
                 else:
                     stop = int(b)
                     stop = stop if stop >= 0 else stop + 1
-                    stop = None if stop == 0 else stop
-                    self._slice_indices.append(slice(start, stop))
+                    if start < 0 and stop == 0:
+                        self._slice_indices.append(slice(start, None))
+                    else:
+                        if stop > start:
+                            self._slice_indices.append(slice(start, stop))
                 continue
 
             # Fallback: treat as matching text
@@ -465,55 +483,86 @@ class UnchangedLinesRule:
         self._parse_list_ranges()
         self._parse_string_ranges()
 
+    def _apply_index_rules(self, lines):
+        """Mark lines as unchanged based on slice ranges, explicit indices, and text patterns."""
+        total = len(lines)
+
+        # Slice-based ranges
+        for slc in self._slice_indices:
+            for line in lines[slc]:
+                line.unchanged = True
+
+        # Explicit indices and text-matching rules
+        if self._indices or self._text_matcher:
+            matcher = self._text_matcher
+            resolved_indices = [(i if i >= 0 else total + i) for i in
+                                self._indices]
+
+            for idx, line in enumerate(lines):
+                if line.unchanged:
+                    continue
+                if idx in resolved_indices:
+                    line.unchanged = True
+                elif matcher.matches(line.raw):
+                    line.unchanged = True
+
+    def _apply_pair_rules(self, lines):
+        """Mark lines as unchanged based on start/stop index or pattern pairs."""
+        total = len(lines)
+
+        def match_rule(idx_: int, rule, text: str) -> bool:
+            """Return True if the index or text satisfies the given rule."""
+            if isinstance(rule, str):
+                return bool(re.search(rule, text))
+            if rule is None:
+                return idx_ == total - 1  # EOF
+            resolved = rule if rule >= 0 else total + rule
+            return max(resolved, 0) == idx_
+
+        for start_rule, stop_rule in self._pairs:
+            # Normalize numeric start/stop pairs
+            if isinstance(start_rule, int) and isinstance(stop_rule, int):
+                if stop_rule < start_rule:
+                    continue
+                start_rule = start_rule - 1 if start_rule > 0 else start_rule
+                stop_rule = stop_rule - 1 if stop_rule > 0 else stop_rule
+
+            in_range = False
+
+            for idx, line in enumerate(lines):
+                if in_range:
+                    line.unchanged = True
+                    if match_rule(idx, stop_rule, line.raw):
+                        break
+
+                if match_rule(idx, start_rule, line.raw):
+                    line.unchanged = True
+                    in_range = True
+
+                    # Case: start == stop (single-line range)
+                    if isinstance(start_rule, int) and start_rule == stop_rule:
+                        break
+
+                    # Width form: wN
+                    if isinstance(stop_rule, str) and re.fullmatch(r"(?i)w\d+",
+                                                                   stop_rule):
+                        width = int(stop_rule[1:])
+                        if width in (0, 1):
+                            line.unchanged = bool(width)
+                            break
+                        stop_rule = idx + width - 1
+
     def apply_unchanged_lines(self, lines):
-        """Mark lines as unchanged based on index rules or start/stop pairs."""
-
-        def matches(index, idx_or_pat, text, total_):
-            """Return True if the current line matches an index or pattern rule."""
-            if isinstance(idx_or_pat, str):
-                return bool(re.search(idx_or_pat, text))
-            if idx_or_pat is None:
-                return index == total_ - 1  # EOF
-            # numeric index (supports negative indexing)
-            idx_ = idx_or_pat if idx_or_pat >= 0 else total_ + idx_or_pat
-            idx_ = idx_ if idx_ >= 0 else 0
-            return idx_ == index
-
+        """Mark lines as unchanged using index rules, slice ranges, text patterns, or start/stop pairs."""
         total = len(lines)
         if total == 0:
             return
 
-        # Direct rules: slices, indices, text patterns
+        # Index-based rules: slices, explicit indices, text patterns
         if self._indices or self._slice_indices or self._text_matcher:
-            # Slice ranges
-            for slc in self._slice_indices:
-                for line in lines[slc]:
-                    line.unchanged = True
-
-            # Explicit indices + text patterns
-            if self._indices or self._text_matcher:
-                matcher = self._text_matcher
-                resolved = [(i if i >= 0 else total + i) for i in self._indices]
-
-                for idx, line in enumerate(lines):
-                    if line.unchanged:
-                        continue
-                    if idx in resolved:
-                        line.unchanged = True
-                    elif matcher.matches(line.raw):
-                        line.unchanged = True
-
+            self._apply_index_rules(lines)
             return
 
-        # # Start/stop pattern pairs
+        # Start/stop pair rules
         if self._pairs:
-            for start_rule, stop_rule in self._pairs:
-                in_range = False
-                for idx, line in enumerate(lines):
-                    if in_range:
-                        line.unchanged = True
-                        if matches(idx, stop_rule, line.raw, total):
-                            break
-                    if matches(idx, start_rule, line.raw, total):
-                        line.unchanged = True
-                        in_range = True
+            self._apply_pair_rules(lines)
