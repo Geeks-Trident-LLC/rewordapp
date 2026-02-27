@@ -70,29 +70,29 @@ rewordapp [options]
 
 ### 🔖 Common Flags
 
-| Flag | Description |
-|------|-------------|
-| `--gui` | Launch the graphical interface |
-| `-f, --data-file` | Path to the input text file |
-| `-r, --rule-file` | YAML rule file defining rewrite behavior |
-| `--show-data` | Display raw input data |
-| `--show-rules` | Display rewrite rules |
- | `--show-header` | Display a header above the output |
-| `-o, --output-file` | Save rewritten content to a file |
-| `--save-rule-file` | Save the active rewrite rules |
-| `--dependency` | Show dependency information |
-| `-v, --version` | Show installed version |
+| Flag                | Description                              |
+|---------------------|------------------------------------------|
+| `--gui`             | Launch the graphical interface           |
+| `-f, --data-file`   | Path to the input text file              |
+| `-r, --rule-file`   | YAML rule file defining rewrite behavior |
+| `--show-data`       | Display raw input data                   |
+| `--show-rules`      | Display rewrite rules                    |
+| `--show-header`     | Display a header above the output        |
+| `-o, --output-file` | Save rewritten content to a file         |
+| `--save-rule-file`  | Save the active rewrite rules            |
+| `--dependency`      | Show dependency information              |
+| `-v, --version`     | Show installed version                   |
 
 ### Example
 
 ```bash
 rewordapp \
-    --data-file sample.txt \
-    --rule-file rules.yaml \
+    --data-file dummy-data.txt \
+    --rule-file dummy-rule.yaml \
     --show-data \
     --show-rules \
     --show-header \
-    --output-file rewritten.txt
+    --output-file dummy-output.txt
 ```
 
 ---
@@ -138,7 +138,7 @@ pytest
 ## 📚 References
 
 - [Wiki](https://github.com/Geeks-Trident-LLC/rewordapp/wiki)  
-- [Rewrite Rule Editor](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rule-Editor)
+- [Rewrite Rules](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rules)
 - [Obfuscated Form -> Gen-AI Workflow](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Obfuscated-Form-%E2%80%90-Gen%E2%80%90AI-Workflow)
 
 ---

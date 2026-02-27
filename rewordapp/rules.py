@@ -72,7 +72,7 @@ class RewriteRules(dict):
     def text_with_rule_docs(self) -> str:
         """Return the text prefixed with a banner and links to rewrite‑rule documentation."""
         header = "# See the full list of rewrite rules in the wiki:"
-        link = "# https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rule-Editor"
+        link = "# https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rules"
 
         border = "#" * max(len(header), len(link))
         docs_block = f"{border}\n{header}\n{link}\n{border}"
