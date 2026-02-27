@@ -7,6 +7,8 @@ General-purpose utility functions used across RewordApp.
 
 import re
 
+from rewordapp import PATTERN
+
 
 def split_by_matches(text, pattern=r"(?u)\s+"):
     """Split text into alternating segments of non-matching and matching substrings."""
@@ -44,3 +46,60 @@ def extract_segments(line: str, parts: list[str]):
         )
 
     return line, "", ""
+
+
+def text_to_pattern(source: str, *, ignore_case: bool = True) -> str:
+    """Convert a text string into a regex-safe generalized pattern."""
+    token_re = rf"(?ix)\s+|[a-z]+|{PATTERN.puncts}|[0-9]+"
+    parts = []
+
+    for tok in split_by_matches(source, pattern=token_re):
+        if re.fullmatch(PATTERN.puncts, tok):
+            parts.append(re.escape(tok))
+        elif tok.isdigit():
+            parts.append(r"[0-9]+")
+        elif tok.isspace():
+            parts.append(r"\s+")
+        elif re.fullmatch(r"(?i)[a-z]+", tok):
+            parts.append(tok)
+        else:
+            parts.append(re.escape(tok))
+
+    pattern = "".join(parts)
+    if ignore_case:
+        pattern = "(?i)" + pattern
+
+    try:
+        re.compile(pattern)
+    except re.error as err:
+        raise ValueError(f"Invalid generated regex pattern: {pattern!r}") from err
+
+    return pattern
+
+
+class TextMatcher:
+    """Collect and match text patterns against input strings."""
+
+    def __init__(self, text: str = ""):
+        self._patterns = []
+        self.add_pattern(text)
+
+    def __bool__(self):
+        return bool(self._patterns)
+
+    def __len__(self):
+        return 1 if self else 0
+
+    def clear(self):
+        """Remove all stored patterns."""
+        self._patterns.clear()
+
+    def add_pattern(self, text: str) -> None:
+        """Convert text to a regex pattern and store it."""
+        if text:
+            pattern = text_to_pattern(text)
+            self._patterns.append(pattern)
+
+    def matches(self, text: str) -> bool:
+        """Return True if any stored pattern matches the given text."""
+        return any(re.search(pattern, text) for pattern in self._patterns)
