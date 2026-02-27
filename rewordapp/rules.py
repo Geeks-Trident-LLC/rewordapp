@@ -4,6 +4,8 @@ import yaml
 import re
 import string
 
+import textwrap
+
 from rewordapp import utils
 from rewordapp.rewrite import mapping
 import rewordapp.exceptions as exceptions
@@ -116,7 +118,7 @@ class RewriteRules(dict):
     def get_unchanged_lines_rule(self):
         """Return an UnchangedLinesRule if unchanged_lines is defined."""
         value = self.get("unchanged_lines")
-        return UnchangedLinesRule(value) if value else None
+        return UnchangedLinesRule(value) if isinstance(value, (str, int, list, tuple)) else None
 
 
 class DateTimeTokenRule:
@@ -263,7 +265,11 @@ class UnchangedLinesRule:
     def __init__(self, rule_value):
         self._rule_value = rule_value
         self._is_parsed = False
+
         self._indices = []
+        self._slice_indices = []
+        self._text_matcher = utils.TextMatcher()
+
         self._pairs = []
 
         self._parse()
@@ -314,7 +320,6 @@ class UnchangedLinesRule:
 
         return "".join(tokens)
 
-
     def _validate_ranges(self) -> None:
         """Validate unchanged_lines as [[start, stop], ...] pairs."""
         msg = (
@@ -348,11 +353,10 @@ class UnchangedLinesRule:
 
     def _parse_list_ranges(self) -> None:
         """Parse unchanged_lines list into normalized [start, stop] pairs."""
-        if not self.raw:
-            return
 
         if isinstance(self.raw, (str, int)):
             return
+
         self._validate_ranges()
         self._pairs.clear()
 
@@ -379,65 +383,81 @@ class UnchangedLinesRule:
         """Parse unchanged_lines string into a list of zero-based indices."""
         raw = self.raw
 
-        # Only process primitive string/int forms; lists handled elsewhere
+        # Lists are handled by the list parser
         if isinstance(raw, list):
             return
 
+        # Only primitive string/int forms are valid here
         if not isinstance(raw, (str, int)):
-            msg = (
-                "unchanged_lines must be in the format: "
-                "idx-k, idx-m, idx-k:idx-j, ..."
-                f"\nReceived: {self.raw!r}"
-            )
-            raise exceptions.UnchangedLinesError(msg)
+            msg = textwrap.dedent(
+                f"""
+                Invalid value for `unchanged_lines`.
 
-        text = str(raw).strip()
-
-        # Capture comma-separated index/range expressions
-        pattern = r"(?ix)\s*(?P<indices>[+-]?\d+(?:[\s0-9,:+-]*))\s*,?\s*"
-        match = re.fullmatch(pattern, text)
-        if not match:
-            msg = (
-                "unchanged_lines must be in the format: "
-                "idx-k, idx-m, idx-k:idx-j, ..."
-                f"\nReceived: {self.raw!r}"
-            )
+                Expected one of the following formats:
+                ================================================================
+                unchanged_lines: <idx-k>
+                unchanged_lines: <idx-i>, <idx-j>, ..., <idx-n>
+                unchanged_lines: <idx-i>, <matching-text-i>, ..., <matching-text-k>, <idx-n>
+                unchanged_lines: <idx-i>, <idx-j>:<idx-k>, ..., <idx-n>
+                unchanged_lines: <idx-i>, <idx-j>:<width>, ..., <idx-n>
+                ================================================================
+                
+                Received: {self.raw!r}
+                """
+            ).strip()
             raise exceptions.UnchangedLinesError(msg)
 
         self._indices.clear()
-        indices_text = match.group("indices")
+        self._slice_indices.clear()
+        self._text_matcher.clear()
 
-        for token in indices_text.split(","):
-            token = token.strip()
-            if not token:
+        # Single integer form
+        if isinstance(raw, int):
+            value = raw if raw <= 0 else raw - 1
+            self._indices.append(value)
+            self._is_parsed = True
+            return
+
+        text = self.raw
+
+        # String form: comma-separated items
+        for item in re.split(r"\s*,\s*", text):
+
+            # Simple index
+            if re.fullmatch(r"-?\d+", item.strip()):
+                value = int(item.strip())
+                self._indices.append(value if value <=0 else value - 1)
                 continue
 
-            # Case 1: single index
-            if re.fullmatch(r"[+-]?\d+", token):
-                idx = int(token)
-                idx = idx if idx <= 0 else idx - 1  # convert to zero-based
-                if idx not in self._indices:
-                    self._indices.append(idx)
+            if item.strip().lower() == "eof":
+                self._indices.append(-1)
                 continue
 
-            # Case 2: range a:b
-            if token.count(":") == 1:
-                start_str, stop_str = (part.strip() for part in
-                                       token.split(":"))
-                if re.fullmatch(r"[+-]?\d+", start_str) and re.fullmatch(
-                        r"[+-]?\d+", stop_str):
-                    start = int(start_str)
-                    stop = int(stop_str)
+            # Slice form: a:b
+            if re.fullmatch(r"(?i)(null|none|-?\d+):(eof|[w-]?\d+)", item.strip()):
+                a, b = item.lower().split(":")
+                a = 0 if a in ("null", "none") else int(a)
+                start = a if a <= 0 else a - 1
+                if b == "eof":
+                    self._slice_indices.append(slice(start, None))
+                elif b.startswith("w"):
+                    width = int(b[1:])
+                    stop = start + width
+                    if start < 0 <= stop:
+                        self._slice_indices.append(slice(start, None))
+                    else:
+                        self._slice_indices.append(slice(start, stop))
+                else:
+                    stop = int(b)
+                    stop = stop if stop >= 0 else stop + 1
+                    stop = None if stop == 0 else stop
+                    self._slice_indices.append(slice(start, stop))
+                continue
 
-                    # convert to zero-based
-                    start = start if start <= 0 else start - 1
+            # Fallback: treat as matching text
+            self._text_matcher.add_pattern(item)
 
-                    if start < stop:
-                        for idx in range(start, stop):
-                            if idx not in self._indices:
-                                self._indices.append(idx)
-
-        if self._indices:
+        if self._indices or self._slice_indices or self._text_matcher:
             self._is_parsed = True
 
     def _parse(self) -> None:
@@ -463,15 +483,29 @@ class UnchangedLinesRule:
         if total == 0:
             return
 
-        # Case 1: explicit index list
-        if self._indices:
-            resolved = [(i if i >= 0 else total + i) for i in self._indices]
-            for idx, line in enumerate(lines):
-                if idx in resolved:
+        # Direct rules: slices, indices, text patterns
+        if self._indices or self._slice_indices or self._text_matcher:
+            # Slice ranges
+            for slc in self._slice_indices:
+                for line in lines[slc]:
                     line.unchanged = True
+
+            # Explicit indices + text patterns
+            if self._indices or self._text_matcher:
+                matcher = self._text_matcher
+                resolved = [(i if i >= 0 else total + i) for i in self._indices]
+
+                for idx, line in enumerate(lines):
+                    if line.unchanged:
+                        continue
+                    if idx in resolved:
+                        line.unchanged = True
+                    elif matcher.matches(line.raw):
+                        line.unchanged = True
+
             return
 
-        # Case 2: start/stop pattern pairs
+        # # Start/stop pattern pairs
         if self._pairs:
             for start_rule, stop_rule in self._pairs:
                 in_range = False
