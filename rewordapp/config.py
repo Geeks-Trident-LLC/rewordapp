@@ -8,9 +8,9 @@ This module centralizes configuration settings and constants for RewordApp CE.
 from os import path
 import yaml
 
-from rewordapp.deps import genericlib_version
-from rewordapp.deps import genericlib_dedent_and_strip as dedent_and_strip
-from rewordapp.deps import regexapp_version
+from rewordapp.libs.common import dedent_and_strip
+from genericlib import version as genericlib_version
+from regexapp import version as regexapp_version
 
 __version__ = '0.3.2'
 version = __version__

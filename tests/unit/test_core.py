@@ -2,7 +2,7 @@
 import pytest
 from rewordapp.core import RewordBuilder
 
-from rewordapp.deps import genericlib_dedent_and_strip as dedent_and_strip
+from rewordapp.libs.common import dedent_and_strip
 
 
 class TestRewordBuilder:

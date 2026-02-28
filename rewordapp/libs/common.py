@@ -1,6 +1,18 @@
 import sys
+import textwrap
 
 from rewordapp.libs import ECODE
+
+
+def dedent_and_strip(txt):
+    """Normalize text by decoding bytes, converting non-strings, and removing indentation."""
+    value = (
+        txt.decode("utf-8")
+        if isinstance(txt, bytes)
+        else txt if isinstance(txt, str)
+        else repr(txt)
+    )
+    return textwrap.dedent(value).strip()
 
 
 def decorate_list_of_line(items: list[str]) -> str:
