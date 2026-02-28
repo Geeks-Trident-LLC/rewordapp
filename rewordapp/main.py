@@ -8,7 +8,7 @@ Main entry point for RewordApp's command‑line interface.
 import argparse
 
 from rewordapp.deps import genericlib_file_module as file
-from rewordapp.deps import genericlib_sys_exit as sys_exit
+from rewordapp.libs.common import sys_exit
 from rewordapp.libs.common import decorate_list_of_line
 
 from rewordapp.core import RewordBuilder
