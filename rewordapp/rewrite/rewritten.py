@@ -10,10 +10,9 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 import re
 import ipaddress
 
-from rewordapp import utils
 from rewordapp.rewrite import checker
 from rewordapp.rewrite.mapping import generate_random_binary, Mapping, apply_mapping
-from rewordapp.libs import PATTERN
+from rewordapp.libs import PATTERN, utils
 
 
 def new_word(text: str) -> str:

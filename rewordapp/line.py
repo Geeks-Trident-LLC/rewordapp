@@ -13,7 +13,7 @@ from rewordapp.token import build_datetime_token
 
 from rewordapp.rules import RewriteRules
 
-import rewordapp.utils as utils
+import rewordapp.libs.utils as utils
 
 
 class Line:

@@ -3,8 +3,7 @@ import re
 from datetime import datetime, timedelta
 from random import randint
 
-from rewordapp import utils
-from rewordapp.libs import PATTERN
+from rewordapp.libs import PATTERN, utils
 
 
 def random_day(base: int) -> int:

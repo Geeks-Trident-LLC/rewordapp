@@ -5,7 +5,7 @@ import re
 
 import textwrap
 
-from rewordapp import utils
+from rewordapp.libs import utils
 from rewordapp.rewrite import mapping
 import rewordapp.exceptions as exceptions
 

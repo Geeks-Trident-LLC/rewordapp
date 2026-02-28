@@ -17,7 +17,7 @@ import rewordapp.config as config
 
 import tkinter as tk
 
-from rewordapp.utils import split_by_matches
+from rewordapp.libs.utils import split_by_matches
 
 
 def show_diff(app, mode):
