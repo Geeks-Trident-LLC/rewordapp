@@ -17,7 +17,7 @@ import rewordapp.config as config
 from rewordapp.libs import shell
 
 
-# Package info for regexapp
+# Package info for rewordapp
 pkg_info = shell.PackageInfo("rewordapp")
 
 # Skip marker if rewordapp is not installed
@@ -41,30 +41,6 @@ class TestData:
         """Check main app text."""
         assert f"v{version}" in config.main_app_text
 
-    @pytest.mark.parametrize(
-        "attr",
-        [
-            "regexapp",
-            "genericlib",
-        ],
-    )
-    def test_package_texts(self, attr):
-        """Check package text strings."""
-        expected = f"{attr} v"
-        assert getattr(config, f"{attr}_text").lower().startswith(expected)
-
-    @pytest.mark.parametrize(
-        "attr",
-        [
-            "regexapp",
-            "genericlib",
-        ],
-    )
-    def test_package_links(self, attr):
-        """Check package links."""
-        expected = f"https://pypi.org/project/{attr}"
-        assert getattr(config, f"{attr}_link").rstrip("/").lower() == expected
-
     def test_company_info(self):
         """Check company info."""
         assert config.company == "Geeks Trident LLC"
@@ -85,8 +61,7 @@ class TestData:
     @pytest.mark.parametrize(
         "pkg",
         [
-            "regexapp",
-            "genericlib",
+            "pyyaml",
         ],
     )
     def test_get_dependency(self, pkg):

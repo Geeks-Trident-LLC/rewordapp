@@ -1,6 +1,4 @@
 # Core libraries used by RewordApp
-genericlib
-regexapp
 pyyaml
 
 # Development & testing

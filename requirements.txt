@@ -1,3 +1,2 @@
-genericlib
-regexapp
+# Core libraries used by RewordApp
 pyyaml

@@ -9,8 +9,6 @@ from os import path
 import yaml
 
 from rewordapp.libs.common import dedent_and_strip
-from genericlib import version as genericlib_version
-from regexapp import version as regexapp_version
 
 __version__ = '0.3.2'
 version = __version__
@@ -23,12 +21,6 @@ __all__ = [
 main_app_text = f'RewordApp v{version} CE'
 
 # packages
-genericlib_text = f"genericlib v{genericlib_version}"
-genericlib_link = "https://pypi.org/project/genericlib/"
-
-regexapp_text = 'regexapp v{}'.format(regexapp_version)
-regexapp_link = 'https://pypi.org/project/regexapp'
-
 pyyaml_text = f"pyyaml v{yaml.__version__}"
 pyyaml_link = "https://pypi.org/project/PyYAML/"
 
@@ -83,8 +75,6 @@ license_text = dedent_and_strip(
 def get_dependency():
     """Return a dictionary of package dependencies with names and PyPI links."""
     dependencies = dict(
-        genericlib=dict(package=genericlib_text, url=genericlib_link),
-        regexapp=dict(package=regexapp_text, url=regexapp_link),
         pyyaml=dict(package=pyyaml_text, url=pyyaml_link),
     )
     return dependencies
