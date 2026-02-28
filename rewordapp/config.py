@@ -10,7 +10,7 @@ import yaml
 
 from rewordapp.libs.common import dedent_and_strip
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 version = __version__
 
 __all__ = [
