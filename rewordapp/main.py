@@ -9,7 +9,7 @@ import argparse
 
 from rewordapp.deps import genericlib_file_module as file
 from rewordapp.deps import genericlib_sys_exit as sys_exit
-from rewordapp.deps import genericlib_decorate_list_of_line as decorate_list_of_line
+from rewordapp.libs.common import decorate_list_of_line
 
 from rewordapp.core import RewordBuilder
 
