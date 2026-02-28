@@ -1,10 +1,10 @@
 
-import string
 import re
 from datetime import datetime, timedelta
 from random import randint
 
 from rewordapp import utils
+from rewordapp.libs import PATTERN
 
 
 def random_day(base: int) -> int:
@@ -82,11 +82,10 @@ class BaseParser:
     def _build(self, func):
         """Extract prefix, core datetime text, and suffix,
         then delegate to a datetime parser."""
-        punct_pattern = f"[{re.escape(string.punctuation)}]"
         pattern = rf"""(?ix)
-            (?P<prefix>{punct_pattern}*)
+            (?P<prefix>{PATTERN.punct}*)
             (?P<datetime>[a-z0-9].+[a-z0-9])
-            (?P<suffix>{punct_pattern}*)
+            (?P<suffix>{PATTERN.punct}*)
             """
 
         match = re.fullmatch(pattern, self._raw_text)

@@ -6,8 +6,8 @@ word parsing and rewriting utilities.
 """
 
 import re
-import string
 
+from rewordapp.libs import PATTERN
 import rewordapp.rewrite.rewritten as rewritten
 
 class WordParser:
@@ -59,11 +59,10 @@ class WordParser:
     def _parse(self) -> None:
         """Parse word from raw text."""
 
-        punc_pattern = f"[{re.escape(string.punctuation)}]"
         pattern = rf"""(?ixu)
-            (?P<prefix>{punc_pattern}+)?
+            (?P<prefix>{PATTERN.puncts})?
             (?P<word>.*[a-z0-9]+.*)
-            (?P<suffix>{punc_pattern}+)?
+            (?P<suffix>{PATTERN.puncts})?
         """
 
         match = re.fullmatch(pattern, self._text)

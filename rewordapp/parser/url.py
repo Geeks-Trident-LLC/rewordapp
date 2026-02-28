@@ -10,7 +10,7 @@ import re
 
 import rewordapp.rewrite.rewritten as rewritten
 from rewordapp.libs.generic import DotObject
-from rewordapp import PATTERN
+from rewordapp.libs import PATTERN
 
 import rewordapp.rewrite.checker as checker
 

@@ -7,7 +7,6 @@ Utilities for inspecting and classifying file name extensions.
 import re
 
 
-
 COMMON_TLDS = [
     "com", "org", "net", "info", "biz", "xyz", "online", "site",
     "app", "dev", "io", "ai",

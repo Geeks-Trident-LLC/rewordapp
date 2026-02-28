@@ -7,7 +7,7 @@ General-purpose utility functions used across RewordApp.
 
 import re
 
-from rewordapp import PATTERN
+from rewordapp.libs import PATTERN
 
 
 def split_by_matches(text, pattern=r"(?u)\s+"):

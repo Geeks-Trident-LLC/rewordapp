@@ -7,14 +7,13 @@ rewriting or obfuscating text components such as letters, digits, and URL parts.
 
 """
 
-import string
 import re
 import ipaddress
 
 from rewordapp import utils
 from rewordapp.rewrite import checker
-from rewordapp.rewrite.checker import has_known_extension
 from rewordapp.rewrite.mapping import generate_random_binary, Mapping, apply_mapping
+from rewordapp.libs import PATTERN
 
 
 def new_word(text: str) -> str:
@@ -29,12 +28,10 @@ def new_word(text: str) -> str:
             return Mapping.letters
         return Mapping.alphanumeric
 
-    punct_pattern = f"[{re.escape(string.punctuation)}]"
-
     ext_pattern = rf'''(?ixu)
             [^\\/:*?"><|][.]
             (?P<last>(?P<ext>[a-z0-9][a-z0-9_-]*)
-            {punct_pattern}*)$
+            {PATTERN.punct}*)$
         '''
     first = text
     last = ""
@@ -46,7 +43,7 @@ def new_word(text: str) -> str:
             first = text[:-len(last)]
 
     parts = []
-    for item in utils.split_by_matches(first, f"{punct_pattern}+"):
+    for item in utils.split_by_matches(first, f"{PATTERN.puncts}"):
         parts.append(apply_mapping(item, select_mapping(item)))
     return "".join(parts) + last
 

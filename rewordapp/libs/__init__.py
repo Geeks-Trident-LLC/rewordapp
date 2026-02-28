@@ -1,3 +1,5 @@
+import re
+import string
 from enum import IntFlag
 
 
@@ -7,3 +9,9 @@ class ECODE(IntFlag):
     BAD = 1
     PASSED = SUCCESS
     FAILED = BAD
+
+
+class PATTERN:
+    """Prebuilt regex fragments for matching characters."""
+    punct = rf"[{re.escape(string.punctuation)}]"
+    puncts = rf"{punct}+"
