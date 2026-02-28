@@ -14,7 +14,7 @@ from rewordapp.ui import helper as ui_helper
 from rewordapp.ui import comparison
 from rewordapp.ui import reditor
 
-from rewordapp.deps import genericlib_file_module as file
+from rewordapp.libs import file
 
 from rewordapp.core import RewordBuilder
 from rewordapp.ui.helper import Position
