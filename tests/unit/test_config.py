@@ -14,7 +14,7 @@ import pytest
 
 from rewordapp import version
 import rewordapp.config as config
-from rewordapp.deps import genericlib_shell_module as shell
+from rewordapp.libs import shell
 
 
 # Package info for regexapp
