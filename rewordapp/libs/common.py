@@ -1,5 +1,6 @@
 import sys
 import textwrap
+import platform
 
 from rewordapp.libs import ECODE
 
@@ -32,3 +33,28 @@ def sys_exit(success: bool = True, msg: str = "") -> None:
         print(msg, file=stream)
 
     sys.exit(exit_code)
+
+
+def ensure_tkinter_available(app_name: str = ""):
+    """Load tkinter or exit with a formatted diagnostic message."""
+
+    name = str(app_name).title() if app_name else "The"
+
+    try:
+        import tkinter as tk
+        return tk
+
+    except ModuleNotFoundError:
+        lines = [
+            f"{name} application failed to start.",
+            f"Python {platform.python_version()} was detected without the tkinter module.",
+            "Install tkinter to enable GUI support and retry.",
+        ]
+        sys_exit(False, decorate_list_of_line(lines))
+
+    except Exception as exc:
+        lines = [
+            f"{name} application could not be started due to:",
+            f"*** {type(exc).__name__}: {exc}",
+        ]
+        sys_exit(False, decorate_list_of_line(lines))

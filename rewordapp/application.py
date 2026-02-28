@@ -8,7 +8,7 @@ The Application class serves as the entry point for the RewordApp CE GUI,
 coordinating UI components from `ui.menu`, `ui.about`, and `ui.helper`.
 """
 
-from regexapp.deps import genericlib_ensure_tkinter_available as ensure_tkinter_available
+from rewordapp.libs.common import ensure_tkinter_available
 
 tk = ensure_tkinter_available(app_name="Rewordapp")
 
