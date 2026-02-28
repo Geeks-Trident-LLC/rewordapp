@@ -10,7 +10,7 @@ Run pytest in the project root to execute these tests:
 """
 
 
-from rewordapp.token import WordToken
+from rewordapp.core.token import WordToken
 
 
 def test_word_token_preserves_length():

@@ -11,7 +11,7 @@ Run pytest in the project root to execute these tests:
 
 
 import pytest
-from rewordapp.line import Line
+from rewordapp.core.line import Line
 
 import tests.unit as testlib
 

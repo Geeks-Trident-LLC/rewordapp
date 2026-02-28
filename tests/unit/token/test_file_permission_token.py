@@ -10,7 +10,7 @@ Run pytest in the project root to execute these tests:
 """
 
 import pytest
-from rewordapp.token import FilePermissionToken
+from rewordapp.core.token import FilePermissionToken
 
 
 @pytest.mark.parametrize(

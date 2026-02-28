@@ -8,8 +8,8 @@ Utilities for splitting a text line into content and newline parts.
 
 import re
 
-from rewordapp.token import build_token
-from rewordapp.token import build_datetime_token
+from rewordapp.core.token import build_token
+from rewordapp.core.token import build_datetime_token
 
 from rewordapp.rules import RewriteRules
 

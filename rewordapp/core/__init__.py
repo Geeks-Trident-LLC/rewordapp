@@ -7,8 +7,7 @@ Core logic and shared utilities for RewordApp CE.
 """
 
 
-from rewordapp.line import Line
-
+from rewordapp.core.line import Line
 from rewordapp.rules import RewriteRules
 
 
