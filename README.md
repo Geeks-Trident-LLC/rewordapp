@@ -137,7 +137,7 @@ pytest
 
 - [Wiki](https://github.com/Geeks-Trident-LLC/rewordapp/wiki)  
 - [Rewrite Rules](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Rewrite-Rules)
-- [Obfuscated Form -> Gen-AI Workflow](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/Obfuscated-Form-%E2%80%90-Gen%E2%80%90AI-Workflow)
+- [FAQ](https://github.com/Geeks-Trident-LLC/rewordapp/wiki/FAQ)
 
 ---
 
