@@ -1,6 +1,6 @@
 """
-rewordapp.utils
----------------
+rewordapp.libs.utils
+====================
 
 General-purpose utility functions used across RewordApp.
 """

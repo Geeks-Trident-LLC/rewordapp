@@ -1,9 +1,8 @@
 """
 rewordapp.ui.menu
------------------
+=================
 
 This module defines the menu bar and its submenus for the RewordApp CE GUI.
-
 """
 
 import rewordapp.ui as ui

@@ -1,3 +1,10 @@
+"""
+rewordapp.libs
+==============
+
+General-purpose functions used across RewordApp.
+"""
+
 import re
 import string
 from enum import IntFlag

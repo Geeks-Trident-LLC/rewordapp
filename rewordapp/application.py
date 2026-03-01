@@ -1,6 +1,6 @@
 """
 rewordapp.application
----------------------
+=====================
 
 This module defines the core Application class for RewordApp CE.
 

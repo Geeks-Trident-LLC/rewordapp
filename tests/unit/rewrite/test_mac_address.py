@@ -1,5 +1,5 @@
 """
-Unit tests for the `rewordapp.rewritten.new_mac_address` function.
+Unit tests for the `rewordapp.rewrite.rewritten.new_mac_address` function.
 
 Usage
 -----

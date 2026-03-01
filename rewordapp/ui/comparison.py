@@ -1,6 +1,6 @@
 """
 rewordapp.ui.comparison
------------------------
+=======================
 
 Comparison dialog UI for original and rewritten text.
 """

@@ -1,5 +1,5 @@
 """
-Unit tests for the `rewordapp.token.FilePermissionToken` class.
+Unit tests for the `rewordapp.core.token.FilePermissionToken` class.
 
 Usage
 -----

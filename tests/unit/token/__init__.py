@@ -1,5 +1,5 @@
 """
-Unit tests for the `rewordapp.token` module.
+Unit tests for the `rewordapp.core.token` module.
 
 Usage
 -----

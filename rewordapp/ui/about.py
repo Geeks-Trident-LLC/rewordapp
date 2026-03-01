@@ -1,6 +1,6 @@
 """
 rewordapp.ui.about
-------------------
+==================
 
 This module defines the UI components for the "About" dialog in RewordApp CE.
 """

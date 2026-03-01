@@ -1,5 +1,5 @@
 """
-Unit tests for the `rewordapp.line` module.
+Unit tests for the `rewordapp.core.line` module.
 
 Usage
 -----

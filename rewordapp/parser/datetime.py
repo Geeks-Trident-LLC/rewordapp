@@ -1,3 +1,10 @@
+"""
+rewordapp.parser.datetime
+=========================
+
+This module provides the parsers used to detect, normalize, and rewrite
+datetime expressions
+"""
 
 import re
 from datetime import datetime, timedelta

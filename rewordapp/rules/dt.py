@@ -1,3 +1,11 @@
+"""
+rewordapp.rules.dt
+==================
+
+This module defines the rule logic used to detect, interpret, and
+rewrite datetime expressions.
+"""
+
 import re
 
 from rewordapp import exceptions as exceptions

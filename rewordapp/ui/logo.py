@@ -1,6 +1,6 @@
 """
 rewordapp.ui.controls
----------------------
+=====================
 
 Utilities for loading and displaying the RewordApp logo.
 

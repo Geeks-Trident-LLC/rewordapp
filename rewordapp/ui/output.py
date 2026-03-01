@@ -1,6 +1,6 @@
 """
 rewordapp.ui.output
--------------------
+===================
 
 This module defines the output UI components for RewordApp CE.
 

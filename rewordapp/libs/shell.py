@@ -2,10 +2,7 @@
 rewordapp.libs.shell
 ====================
 
-This module provides helper functions to execute, manage, and
-validate shell commands within Python applications. It abstracts
-common subprocess patterns, offering a consistent interface for
-running commands, capturing output, and handling errors.
+General-purpose shell (CLI interaction) functions used across RewordApp.
 """
 
 import subprocess

@@ -1,3 +1,10 @@
+"""
+rewordapp.libs.common
+=====================
+
+General-purpose generic classes used across RewordApp.
+"""
+
 import re
 
 

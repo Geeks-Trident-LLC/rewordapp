@@ -1,3 +1,10 @@
+"""
+rewordapp.libs.file
+=====================
+
+General-purpose file functions used across RewordApp.
+"""
+
 from rewordapp.libs.common import sys_exit
 
 

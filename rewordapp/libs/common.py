@@ -1,3 +1,10 @@
+"""
+rewordapp.libs.common
+=====================
+
+General-purpose common functions used across RewordApp.
+"""
+
 import sys
 import textwrap
 import platform

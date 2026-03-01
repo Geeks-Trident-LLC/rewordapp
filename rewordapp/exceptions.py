@@ -1,8 +1,8 @@
 """
 rewordapp.exceptions
 ====================
-Exception classes for the rewordapp project.
 
+Exception classes for the rewordapp project.
 """
 
 

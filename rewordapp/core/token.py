@@ -1,3 +1,11 @@
+"""
+rewordapp.core.token
+====================
+
+This module provides the core token classes used to detect, classify,
+and transform segments of text during rewriting.
+"""
+
 
 import re
 

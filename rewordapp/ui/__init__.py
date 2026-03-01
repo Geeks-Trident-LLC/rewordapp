@@ -1,6 +1,6 @@
 """
-rewordapp.ui.__init__
----------------------
+rewordapp.ui
+============
 
 This module initializes the UI package for RewordApp CE.
 

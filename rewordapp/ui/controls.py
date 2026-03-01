@@ -1,6 +1,6 @@
 """
 rewordapp.ui.controls
----------------------
+=====================
 
 UI controls and reusable widget components for RewordApp CE.
 

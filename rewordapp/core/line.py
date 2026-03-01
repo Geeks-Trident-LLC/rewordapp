@@ -1,6 +1,6 @@
 """
-rewordapp.Line
-==============
+rewordapp.core.line
+===================
 
 Utilities for splitting a text line into content and newline parts.
 

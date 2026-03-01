@@ -1,8 +1,8 @@
 """
 rewordapp.main
-=============
-Main entry point for RewordApp's command‑line interface.
+==============
 
+Main entry point for RewordApp's command‑line interface.
 """
 
 import argparse

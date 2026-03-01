@@ -2,11 +2,8 @@
 rewordapp.libs.decorators
 =========================
 
-Utility decorators for text normalization, formatting, and output consistency.
-
 This module provides reusable decorators that simplify common text‑processing
-tasks across the codebase. They ensure that functions receive or return
-normalized strings, making downstream parsing and testing more reliable.
+tasks across the codebase.
 """
 
 import functools

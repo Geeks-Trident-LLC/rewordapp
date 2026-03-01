@@ -1,6 +1,6 @@
 """
 rewordapp.ui.user
------------------
+=================
 
 This module defines the user-facing UI components for RewordApp CE.
 

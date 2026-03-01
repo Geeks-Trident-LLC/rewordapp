@@ -1,5 +1,5 @@
 """
-Unit tests for the `rewordapp.token.WordToken` class.
+Unit tests for the `rewordapp.core.token.WordToken` class.
 
 Usage
 -----

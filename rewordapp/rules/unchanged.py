@@ -1,3 +1,11 @@
+"""
+rewordapp.rules.unchanged
+=========================
+
+This module defines the logic used to detect and retain lines that
+should not be modified during rewriting.
+"""
+
 import re
 
 import textwrap

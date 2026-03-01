@@ -1,6 +1,6 @@
 """
 rewordapp.config
-----------------
+================
 
 This module centralizes configuration settings and constants for RewordApp CE.
 """

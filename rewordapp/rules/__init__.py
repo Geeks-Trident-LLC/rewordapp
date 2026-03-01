@@ -1,3 +1,11 @@
+"""
+rewordapp.rules
+===============
+
+This module provides the structures used to define, load, and manage
+rewrite rules, including built‑in rules and user‑defined extensions.
+"""
+
 import yaml
 
 from rewordapp import exceptions as exceptions
