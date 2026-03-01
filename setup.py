@@ -7,7 +7,7 @@ with open("README.md", encoding="utf-8") as f:
 
 setup(
     name="rewordapp",
-    version="0.3.3",  # pre-alpha versioning to signal alpha/beta status
+    version="0.3.4",  # pre-alpha versioning to signal alpha/beta status
     license="BSD-3-Clause",
     license_files=["LICENSE"],
     description=(
