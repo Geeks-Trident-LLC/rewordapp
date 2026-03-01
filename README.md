@@ -71,6 +71,7 @@ rewordapp [options]
 | Flag                | Description                              |
 |---------------------|------------------------------------------|
 | `--gui`             | Launch the graphical interface           |
+| `-d, --data`        | Input text for rewriting                 |
 | `-f, --data-file`   | Path to the input text file              |
 | `-r, --rule-file`   | YAML rule file defining rewrite behavior |
 | `--show-data`       | Display raw input data                   |
@@ -85,6 +86,7 @@ rewordapp [options]
 
 ```bash
 rewordapp \
+    --data input_text \
     --data-file dummy-data.txt \
     --rule-file dummy-rule.yaml \
     --show-data \

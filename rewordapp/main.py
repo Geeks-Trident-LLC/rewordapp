@@ -63,10 +63,11 @@ def show_version(options):
 def run_rewrite(options):
     """Rewrite input text using the provided rules and output settings."""
 
-    if not options.data_file:
+    if not options.data_file and not options.data:
         return
     try:
         builder = RewordBuilder(
+            text=options.data,
             data_file=options.data_file,
             rule_file=options.rule_file
         )
@@ -132,9 +133,15 @@ class Cli:
             "--gui",
             action="store_true",
             help=(
-                "Launch the graphical interface for interactive text rewriting and "
-                "configuration. Ideal for users who prefer a visual workflow."
+                "Launch the graphical interface for interactive text rewriting ."
             ),
+        )
+
+        parser.add_argument(
+            "-d", "--data",
+            type=str,
+            default="",
+            help="Input text for rewriting.",
         )
 
         parser.add_argument(

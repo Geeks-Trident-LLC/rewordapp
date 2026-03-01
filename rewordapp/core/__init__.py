@@ -36,8 +36,8 @@ class RewordBuilder:
 
         # Store as list so lines can be iterated multiple times
         self._lines = [
-            Line(line, rules=self.rules)
-            for line in self._text.splitlines(keepends=True)
+            Line(line_, rules=self.rules)
+            for line_ in self._text.splitlines(keepends=True)
         ]
 
     def __bool__(self) -> bool:
@@ -70,7 +70,7 @@ class RewordBuilder:
             unchanged_rule.apply_unchanged_lines(self._lines)
 
         parts = []
-        for line in self._lines:
-            parts.append(line.rewritten)
-            parts.append(line.newline)
+        for line_ in self._lines:
+            parts.append(line_.rewritten)
+            parts.append(line_.newline)
         return "".join(parts)

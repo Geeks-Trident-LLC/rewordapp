@@ -23,7 +23,6 @@ class Line:
         self._raw = text
         self._content = text.rstrip("\r\n")
         self._newline = text[len(self._content):]
-        self._rewritten = ""
         self._unchanged = False
         self.rules = rules if isinstance(rules, dict) else {}
 
@@ -67,16 +66,11 @@ class Line:
         if self.unchanged:
             return self.content
 
-        # Return cached value if already computed
-        if self._rewritten:
-            return self._rewritten
-
         tokens = self.tokenize()
         if not tokens:
             return ""
 
-        self._rewritten = "".join(token.rewritten for token in tokens)
-        return self._rewritten
+        return "".join(token.rewritten for token in tokens)
 
     def tokenize(self):
         """Tokenize content, applying datetime rewrite when applicable."""
